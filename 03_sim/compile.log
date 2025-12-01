@@ -1,0 +1,73 @@
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_mux.sv:47: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_mux.sv:47: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:115: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:115: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:133: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:133: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:133: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:133: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:133: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:192: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:192: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:192: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:192: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:192: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:201: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:201: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:201: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/lsu.sv:214: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/brc.sv:21: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/brc.sv:21: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/control_unit.sv:168: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/imm_gen.sv:42: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:76: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:76: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:86: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:86: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:86: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:86: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:86: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:160: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:160: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/pipelined.sv:479: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/pipelined.sv:496: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/pipelined.sv:496: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/pipelined.sv:496: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/pipelined.sv:496: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/brc.sv:21: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/brc.sv:21: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/control_unit.sv:168: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/imm_gen.sv:42: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/output_buffer.sv:32: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:76: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:76: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:86: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:86: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:86: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:86: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:86: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:160: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/stage_mem.sv:160: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/pipelined.sv:479: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/pipelined.sv:496: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/pipelined.sv:496: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/pipelined.sv:496: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/pipelined.sv:496: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/wrapper.sv:81: sorry: constant selects in always_* processes are not currently supported (all bits will be included).
+./../00_src/ex_mem_reg.sv:102: warning: System task ($display) cannot be synthesized in an always_ff process.
+./../00_src/ex_mem_reg.sv:108: warning: System task ($display) cannot be synthesized in an always_ff process.
+./../00_src/stage_ex.sv:45: warning: System task ($display) cannot be synthesized in an always_comb process.
+./../00_src/ex_mem_reg.sv:102: warning: System task ($display) cannot be synthesized in an always_ff process.
+./../00_src/ex_mem_reg.sv:108: warning: System task ($display) cannot be synthesized in an always_ff process.
+./../00_src/stage_ex.sv:45: warning: System task ($display) cannot be synthesized in an always_comb process.

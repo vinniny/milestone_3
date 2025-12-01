@@ -1,0 +1,31 @@
+read_verilog -sv -formal -overwrite {workspace}/00_src/FA_32bit.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/PC.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/mux2_1.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/i_mem.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/if_id_reg.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/regfile.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/brc.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/control_unit.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/imm_gen.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/id_ex_reg.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/alu.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/ex_mem_reg.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/input_mux.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/output_mux.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/lsu.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/dmem.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/input_buffer.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/output_buffer.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/mem_wb_reg.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/hazard_unit.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/forwarding_unit.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/stage_if.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/stage_id.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/stage_ex.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/stage_mem.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/pipelined.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/clock_10M.sv
+read_verilog -sv -formal -overwrite {workspace}/00_src/wrapper.sv
+hierarchy -check -top wrapper
+proc
+write_json {workspace}/netlist/wrapper.json

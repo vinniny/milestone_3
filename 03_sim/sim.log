@@ -1,0 +1,522 @@
+WARNING: ./../00_src/dmem.sv:27: $readmemh(../02_test/dmem_init_32bit.hex): Not enough words in the file for the requested range [0:16383].
+WARNING: ./../00_src/i_mem.sv:24: $readmemh(../02_test/isa_test_32bit.hex): Not enough words in the file for the requested range [0:16383].
+WARNING: ./../00_src/dmem.sv:27: $readmemh(../02_test/dmem_init_32bit.hex): Not enough words in the file for the requested range [0:16383].
+
+PIPELINE - ISA tests
+
+VCD info: dumpfile wave.vcd opened for output.
+WARNING: ./../00_src/i_mem.sv:24: $readmemh(../02_test/isa_test_32bit.hex): Not enough words in the file for the requested range [0:16383].
+WARNING: ./../00_src/dmem.sv:27: $readmemh(../02_test/dmem_init_32bit.hex): Not enough words in the file for the requested range [0:16383].
+EX STAGE X @0: fwd_b_sel=xx rs2_val=xxxxxxxx wb_data=xxxxxxxx ex_mem_alu=xxxxxxxx -> rs2_fwd=xxxxxxxx
+EX STAGE X @0: fwd_b_sel=xx rs2_val=xxxxxxxx wb_data=xxxxxxxx ex_mem_alu=xxxxxxxx -> rs2_fwd=xxxxxxxx
+EX STAGE X @0: fwd_b_sel=00 rs2_val=xxxxxxxx wb_data=xxxxxxxx ex_mem_alu=xxxxxxxx -> rs2_fwd=xxxxxxxx
+EX STAGE X @0: fwd_b_sel=00 rs2_val=xxxxxxxx wb_data=xxxxxxxx ex_mem_alu=xxxxxxxx -> rs2_fwd=xxxxxxxx
+ERROR @10: x0 corrupted: xxxxxxxx
+[110] REDIRECT: from PC=0x00000004 to PC=0x000000e8
+[110] IF/ID PC=0x04: instr=0x0e4000ef valid=1 bubble=0
+[110] ID PC=0x04: jump=1 branch=0 pred_taken=0 redirect_valid=1
+[150] COMMIT pc=0x00000000
+[170] COMMIT pc=0x00000004
+TBENCH @210 (posedge): io_ledr=0x00000000
+[210] COMMIT pc=0x000000e8
+STAGE_MEM @210: b_io_ledr=0x00000000 o_io_ledr=0x00000000
+STAGE_MEM @210: IO addr=0x10000000 mem_write=1 f_io_valid=1
+MEM IN @210: mem_write=1 f_io_valid=1 i_store_data=00000061
+EX/MEM OUT @210: pc=000000ec mem_write=1 store_data=00000061
+SCOREBOARD @220 (negedge): o_io_ledr=0x00000061 prev_ledr=0x00000000
+STAGE_MEM @230: b_io_ledr=0x00000061 o_io_ledr=0x00000061
+[230] COMMIT pc=0x000000ec
+TBENCH @230 (posedge): io_ledr=0x00000061
+SCOREBOARD @240 (negedge): o_io_ledr=0x00000061 prev_ledr=0x00000061
+TBENCH @250 (posedge): io_ledr=0x00000061
+[250] COMMIT pc=0x000000f0
+STAGE_MEM @250: b_io_ledr=0x00000061 o_io_ledr=0x00000061
+STAGE_MEM @250: IO addr=0x10000000 mem_write=1 f_io_valid=1
+MEM IN @250: mem_write=1 f_io_valid=1 i_store_data=00000064
+EX/MEM OUT @250: pc=000000f4 mem_write=1 store_data=00000064
+SCOREBOARD @260 (negedge): o_io_ledr=0x00000064 prev_ledr=0x00000061
+STAGE_MEM @270: b_io_ledr=0x00000064 o_io_ledr=0x00000064
+[270] COMMIT pc=0x000000f4
+[270] REDIRECT: from PC=0x00000100 to PC=0x00000174
+TBENCH @270 (posedge): io_ledr=0x00000064
+SCOREBOARD @280 (negedge): o_io_ledr=0x00000064 prev_ledr=0x00000064
+TBENCH @290 (posedge): io_ledr=0x00000064
+[290] COMMIT pc=0x000000f8
+STAGE_MEM @290: b_io_ledr=0x00000064 o_io_ledr=0x00000064
+STAGE_MEM @290: IO addr=0x10000000 mem_write=1 f_io_valid=1
+MEM IN @290: mem_write=1 f_io_valid=1 i_store_data=00000064
+EX/MEM OUT @290: pc=000000fc mem_write=1 store_data=00000064
+SCOREBOARD @300 (negedge): o_io_ledr=0x00000064 prev_ledr=0x00000064
+EX/MEM @310: BUBBLE - zeroing store_data (was 00000000)
+STAGE_MEM @310: b_io_ledr=0x00000064 o_io_ledr=0x00000064
+[310] COMMIT pc=0x000000fc
+TBENCH @310 (posedge): io_ledr=0x00000064
+SCOREBOARD @320 (negedge): o_io_ledr=0x00000064 prev_ledr=0x00000064
+TBENCH @330 (posedge): io_ledr=0x00000064
+ERROR @330: Write to x0 detected! (rd= 0 data=00000174 pc=00000100)
+[330] COMMIT pc=0x00000100
+STAGE_MEM @330: b_io_ledr=0x00000064 o_io_ledr=0x00000064
+SCOREBOARD @340 (negedge): o_io_ledr=0x00000064 prev_ledr=0x00000064
+STAGE_MEM @350: b_io_ledr=0x00000064 o_io_ledr=0x00000064
+TBENCH @350 (posedge): io_ledr=0x00000064
+SCOREBOARD @360 (negedge): o_io_ledr=0x00000064 prev_ledr=0x00000064
+TBENCH @370 (posedge): io_ledr=0x00000064
+[370] COMMIT pc=0x00000174
+STAGE_MEM @370: b_io_ledr=0x00000064 o_io_ledr=0x00000064
+STAGE_MEM @370: IO addr=0x10000000 mem_write=1 f_io_valid=1
+SCOREBOARD @380 (negedge): o_io_ledr=0x0000002e prev_ledr=0x00000064
+STAGE_MEM @390: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[390] COMMIT pc=0x00000178
+TBENCH @390 (posedge): io_ledr=0x0000002e
+SCOREBOARD @400 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @410 (posedge): io_ledr=0x0000002e
+[410] COMMIT pc=0x0000017c
+STAGE_MEM @410: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+STAGE_MEM @410: IO addr=0x10000000 mem_write=1 f_io_valid=1
+SCOREBOARD @420 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @430: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[430] COMMIT pc=0x00000180
+TBENCH @430 (posedge): io_ledr=0x0000002e
+SCOREBOARD @440 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @450 (posedge): io_ledr=0x0000002e
+[450] COMMIT pc=0x00000184
+STAGE_MEM @450: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+STAGE_MEM @450: IO addr=0x10000000 mem_write=1 f_io_valid=1
+SCOREBOARD @460 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @470: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[470] COMMIT pc=0x00000188
+TBENCH @470 (posedge): io_ledr=0x0000002e
+SCOREBOARD @480 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @490 (posedge): io_ledr=0x0000002e
+[490] COMMIT pc=0x0000018c
+STAGE_MEM @490: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+STAGE_MEM @490: IO addr=0x10000000 mem_write=1 f_io_valid=1
+SCOREBOARD @500 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @510: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[510] COMMIT pc=0x00000190
+TBENCH @510 (posedge): io_ledr=0x0000002e
+SCOREBOARD @520 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @530 (posedge): io_ledr=0x0000002e
+[530] COMMIT pc=0x00000194
+STAGE_MEM @530: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+STAGE_MEM @530: IO addr=0x10000000 mem_write=1 f_io_valid=1
+SCOREBOARD @540 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @550: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[550] COMMIT pc=0x00000198
+[550] REDIRECT: from PC=0x000001a4 to PC=0x00000008
+TBENCH @550 (posedge): io_ledr=0x0000002e
+SCOREBOARD @560 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @570 (posedge): io_ledr=0x0000002e
+[570] COMMIT pc=0x0000019c
+STAGE_MEM @570: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+STAGE_MEM @570: IO addr=0x10000000 mem_write=1 f_io_valid=1
+SCOREBOARD @580 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @590: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[590] COMMIT pc=0x000001a0
+TBENCH @590 (posedge): io_ledr=0x0000002e
+SCOREBOARD @600 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @610 (posedge): io_ledr=0x0000002e
+ERROR @610: Write to x0 detected! (rd= 0 data=00000008 pc=000001a4)
+[610] COMMIT pc=0x000001a4
+STAGE_MEM @610: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+SCOREBOARD @620 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @630: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+TBENCH @630 (posedge): io_ledr=0x0000002e
+SCOREBOARD @640 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @650 (posedge): io_ledr=0x0000002e
+[650] COMMIT pc=0x00000008
+STAGE_MEM @650: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+SCOREBOARD @660 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @670: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[670] COMMIT pc=0x0000000c
+INFO @670: stall_id=1 (ID/EX must HOLD)
+INFO @670: stall_if=1 (PC & IF/ID must HOLD)
+TBENCH @670 (posedge): io_ledr=0x0000002e
+SCOREBOARD @680 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @690 (posedge): io_ledr=0x0000002e
+[690] COMMIT pc=0x00000010
+[690] REDIRECT: from PC=0x00000018 to PC=0x00000024
+STAGE_MEM @690: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+SCOREBOARD @700 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @710: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[710] COMMIT pc=0x00000014
+TBENCH @710 (posedge): io_ledr=0x0000002e
+SCOREBOARD @720 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @730 (posedge): io_ledr=0x0000002e
+[730] REDIRECT: from PC=0x00000024 to PC=0x000001a8
+STAGE_MEM @730: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+SCOREBOARD @740 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @750: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[750] COMMIT pc=0x00000018
+TBENCH @750 (posedge): io_ledr=0x0000002e
+SCOREBOARD @760 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @770 (posedge): io_ledr=0x0000002e
+STAGE_MEM @770: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+SCOREBOARD @780 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @790: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[790] COMMIT pc=0x00000024
+TBENCH @790 (posedge): io_ledr=0x0000002e
+SCOREBOARD @800 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @810 (posedge): io_ledr=0x0000002e
+STAGE_MEM @810: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+SCOREBOARD @820 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @830: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @830: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[830] COMMIT pc=0x000001a8
+TBENCH @830 (posedge): io_ledr=0x0000002e
+SCOREBOARD @840 (negedge): o_io_ledr=0x00000050 prev_ledr=0x0000002e
+TBENCH @850 (posedge): io_ledr=0x00000050
+[850] COMMIT pc=0x000001ac
+STAGE_MEM @850: b_io_ledr=0x00000050 o_io_ledr=0x00000050
+SCOREBOARD @860 (negedge): o_io_ledr=0x00000050 prev_ledr=0x00000050
+STAGE_MEM @870: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @870: b_io_ledr=0x00000050 o_io_ledr=0x00000050
+[870] COMMIT pc=0x000001b0
+TBENCH @870 (posedge): io_ledr=0x00000050
+SCOREBOARD @880 (negedge): o_io_ledr=0x00000041 prev_ledr=0x00000050
+TBENCH @890 (posedge): io_ledr=0x00000041
+[890] COMMIT pc=0x000001b4
+STAGE_MEM @890: b_io_ledr=0x00000041 o_io_ledr=0x00000041
+SCOREBOARD @900 (negedge): o_io_ledr=0x00000041 prev_ledr=0x00000041
+STAGE_MEM @910: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @910: b_io_ledr=0x00000041 o_io_ledr=0x00000041
+[910] COMMIT pc=0x000001b8
+TBENCH @910 (posedge): io_ledr=0x00000041
+SCOREBOARD @920 (negedge): o_io_ledr=0x00000053 prev_ledr=0x00000041
+TBENCH @930 (posedge): io_ledr=0x00000053
+[930] COMMIT pc=0x000001bc
+STAGE_MEM @930: b_io_ledr=0x00000053 o_io_ledr=0x00000053
+SCOREBOARD @940 (negedge): o_io_ledr=0x00000053 prev_ledr=0x00000053
+STAGE_MEM @950: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @950: b_io_ledr=0x00000053 o_io_ledr=0x00000053
+[950] COMMIT pc=0x000001c0
+TBENCH @950 (posedge): io_ledr=0x00000053
+SCOREBOARD @960 (negedge): o_io_ledr=0x00000053 prev_ledr=0x00000053
+TBENCH @970 (posedge): io_ledr=0x00000053
+[970] COMMIT pc=0x000001c4
+[970] REDIRECT: from PC=0x000001d0 to PC=0x00000028
+STAGE_MEM @970: b_io_ledr=0x00000053 o_io_ledr=0x00000053
+SCOREBOARD @980 (negedge): o_io_ledr=0x00000053 prev_ledr=0x00000053
+STAGE_MEM @990: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @990: b_io_ledr=0x00000053 o_io_ledr=0x00000053
+[990] COMMIT pc=0x000001c8
+TBENCH @990 (posedge): io_ledr=0x00000053
+SCOREBOARD @1000 (negedge): o_io_ledr=0x0000000a prev_ledr=0x00000053
+ad.PAS
+TBENCH @1010 (posedge): io_ledr=0x0000000a
+[1010] COMMIT pc=0x000001cc
+[1010] REDIRECT: from PC=0x00000028 to PC=0x0000002c
+STAGE_MEM @1010: b_io_ledr=0x0000000a o_io_ledr=0x0000000a
+SCOREBOARD @1020 (negedge): o_io_ledr=0x0000000a prev_ledr=0x0000000a
+STAGE_MEM @1030: b_io_ledr=0x0000000a o_io_ledr=0x0000000a
+[1030] COMMIT pc=0x000001d0
+ERROR @1030: Write to x0 detected! (rd= 0 data=00000028 pc=000001d0)
+TBENCH @1030 (posedge): io_ledr=0x0000000a
+SCOREBOARD @1040 (negedge): o_io_ledr=0x0000000a prev_ledr=0x0000000a
+TBENCH @1050 (posedge): io_ledr=0x0000000a
+[1050] REDIRECT: from PC=0x0000002c to PC=0x00000104
+STAGE_MEM @1050: b_io_ledr=0x0000000a o_io_ledr=0x0000000a
+SCOREBOARD @1060 (negedge): o_io_ledr=0x0000000a prev_ledr=0x0000000a
+STAGE_MEM @1070: b_io_ledr=0x0000000a o_io_ledr=0x0000000a
+[1070] COMMIT pc=0x00000028
+ERROR @1070: Write to x0 detected! (rd= 0 data=0000002c pc=00000028)
+TBENCH @1070 (posedge): io_ledr=0x0000000a
+SCOREBOARD @1080 (negedge): o_io_ledr=0x0000000a prev_ledr=0x0000000a
+TBENCH @1090 (posedge): io_ledr=0x0000000a
+STAGE_MEM @1090: b_io_ledr=0x0000000a o_io_ledr=0x0000000a
+SCOREBOARD @1100 (negedge): o_io_ledr=0x0000000a prev_ledr=0x0000000a
+STAGE_MEM @1110: b_io_ledr=0x0000000a o_io_ledr=0x0000000a
+[1110] COMMIT pc=0x0000002c
+TBENCH @1110 (posedge): io_ledr=0x0000000a
+SCOREBOARD @1120 (negedge): o_io_ledr=0x0000000a prev_ledr=0x0000000a
+TBENCH @1130 (posedge): io_ledr=0x0000000a
+STAGE_MEM @1130: b_io_ledr=0x0000000a o_io_ledr=0x0000000a
+SCOREBOARD @1140 (negedge): o_io_ledr=0x0000000a prev_ledr=0x0000000a
+STAGE_MEM @1150: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @1150: b_io_ledr=0x0000000a o_io_ledr=0x0000000a
+[1150] COMMIT pc=0x00000104
+TBENCH @1150 (posedge): io_ledr=0x0000000a
+SCOREBOARD @1160 (negedge): o_io_ledr=0x00000073 prev_ledr=0x0000000a
+TBENCH @1170 (posedge): io_ledr=0x00000073
+[1170] COMMIT pc=0x00000108
+STAGE_MEM @1170: b_io_ledr=0x00000073 o_io_ledr=0x00000073
+SCOREBOARD @1180 (negedge): o_io_ledr=0x00000073 prev_ledr=0x00000073
+STAGE_MEM @1190: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @1190: b_io_ledr=0x00000073 o_io_ledr=0x00000073
+[1190] COMMIT pc=0x0000010c
+TBENCH @1190 (posedge): io_ledr=0x00000073
+SCOREBOARD @1200 (negedge): o_io_ledr=0x00000075 prev_ledr=0x00000073
+TBENCH @1210 (posedge): io_ledr=0x00000075
+[1210] COMMIT pc=0x00000110
+[1210] REDIRECT: from PC=0x0000011c to PC=0x00000174
+STAGE_MEM @1210: b_io_ledr=0x00000075 o_io_ledr=0x00000075
+SCOREBOARD @1220 (negedge): o_io_ledr=0x00000075 prev_ledr=0x00000075
+STAGE_MEM @1230: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @1230: b_io_ledr=0x00000075 o_io_ledr=0x00000075
+[1230] COMMIT pc=0x00000114
+TBENCH @1230 (posedge): io_ledr=0x00000075
+SCOREBOARD @1240 (negedge): o_io_ledr=0x00000062 prev_ledr=0x00000075
+TBENCH @1250 (posedge): io_ledr=0x00000062
+[1250] COMMIT pc=0x00000118
+STAGE_MEM @1250: b_io_ledr=0x00000062 o_io_ledr=0x00000062
+SCOREBOARD @1260 (negedge): o_io_ledr=0x00000062 prev_ledr=0x00000062
+STAGE_MEM @1270: b_io_ledr=0x00000062 o_io_ledr=0x00000062
+[1270] COMMIT pc=0x0000011c
+ERROR @1270: Write to x0 detected! (rd= 0 data=00000174 pc=0000011c)
+TBENCH @1270 (posedge): io_ledr=0x00000062
+SCOREBOARD @1280 (negedge): o_io_ledr=0x00000062 prev_ledr=0x00000062
+TBENCH @1290 (posedge): io_ledr=0x00000062
+STAGE_MEM @1290: b_io_ledr=0x00000062 o_io_ledr=0x00000062
+SCOREBOARD @1300 (negedge): o_io_ledr=0x00000062 prev_ledr=0x00000062
+STAGE_MEM @1310: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @1310: b_io_ledr=0x00000062 o_io_ledr=0x00000062
+[1310] COMMIT pc=0x00000174
+TBENCH @1310 (posedge): io_ledr=0x00000062
+SCOREBOARD @1320 (negedge): o_io_ledr=0x0000002e prev_ledr=0x00000062
+TBENCH @1330 (posedge): io_ledr=0x0000002e
+[1330] COMMIT pc=0x00000178
+STAGE_MEM @1330: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+SCOREBOARD @1340 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @1350: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @1350: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[1350] COMMIT pc=0x0000017c
+TBENCH @1350 (posedge): io_ledr=0x0000002e
+SCOREBOARD @1360 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @1370 (posedge): io_ledr=0x0000002e
+[1370] COMMIT pc=0x00000180
+STAGE_MEM @1370: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+SCOREBOARD @1380 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @1390: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @1390: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[1390] COMMIT pc=0x00000184
+TBENCH @1390 (posedge): io_ledr=0x0000002e
+SCOREBOARD @1400 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @1410 (posedge): io_ledr=0x0000002e
+[1410] COMMIT pc=0x00000188
+STAGE_MEM @1410: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+SCOREBOARD @1420 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @1430: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @1430: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[1430] COMMIT pc=0x0000018c
+TBENCH @1430 (posedge): io_ledr=0x0000002e
+SCOREBOARD @1440 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @1450 (posedge): io_ledr=0x0000002e
+[1450] COMMIT pc=0x00000190
+STAGE_MEM @1450: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+SCOREBOARD @1460 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+STAGE_MEM @1470: IO addr=0x10000000 mem_write=1 f_io_valid=1
+STAGE_MEM @1470: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[1470] COMMIT pc=0x00000194
+TBENCH @1470 (posedge): io_ledr=0x0000002e
+SCOREBOARD @1480 (negedge): o_io_ledr=0x0000002e prev_ledr=0x0000002e
+TBENCH @1490 (posedge): io_ledr=0x0000002e
+[1490] COMMIT pc=0x00000198
+[1490] REDIRECT: from PC=0x000001a4 to PC=0x00000030
+STAGE_MEM @1490: b_io_ledr=0x0000002e o_io_ledr=0x0000002e
+[1510] COMMIT pc=0x0000019c
+[1530] COMMIT pc=0x000001a0
+[1550] COMMIT pc=0x000001a4
+ERROR @1550: Write to x0 detected! (rd= 0 data=00000030 pc=000001a4)
+[1590] COMMIT pc=0x00000030
+INFO @1610: stall_id=1 (ID/EX must HOLD)
+INFO @1610: stall_if=1 (PC & IF/ID must HOLD)
+[1610] COMMIT pc=0x00000034
+[1630] COMMIT pc=0x00000038
+[1630] REDIRECT: from PC=0x00000040 to PC=0x0000004c
+[1650] COMMIT pc=0x0000003c
+[1670] REDIRECT: from PC=0x0000004c to PC=0x000001a8
+[1690] COMMIT pc=0x00000040
+[1730] COMMIT pc=0x0000004c
+[1770] COMMIT pc=0x000001a8
+[1790] COMMIT pc=0x000001ac
+[1810] COMMIT pc=0x000001b0
+[1830] COMMIT pc=0x000001b4
+[1850] COMMIT pc=0x000001b8
+[1870] COMMIT pc=0x000001bc
+[1890] COMMIT pc=0x000001c0
+[1910] COMMIT pc=0x000001c4
+[1910] REDIRECT: from PC=0x000001d0 to PC=0x00000050
+[1930] COMMIT pc=0x000001c8
+sub.PAS
+[1950] COMMIT pc=0x000001cc
+[1950] REDIRECT: from PC=0x00000050 to PC=0x00000054
+ERROR @1970: Write to x0 detected! (rd= 0 data=00000050 pc=000001d0)
+[1970] COMMIT pc=0x000001d0
+[1990] REDIRECT: from PC=0x00000054 to PC=0x00000120
+ERROR @2010: Write to x0 detected! (rd= 0 data=00000054 pc=00000050)
+[2010] COMMIT pc=0x00000050
+[2050] COMMIT pc=0x00000054
+[2090] COMMIT pc=0x00000120
+[2110] COMMIT pc=0x00000124
+[2130] COMMIT pc=0x00000128
+[2150] COMMIT pc=0x0000012c
+[2150] REDIRECT: from PC=0x00000138 to PC=0x00000174
+[2170] COMMIT pc=0x00000130
+[2190] COMMIT pc=0x00000134
+ERROR @2210: Write to x0 detected! (rd= 0 data=00000174 pc=00000138)
+[2210] COMMIT pc=0x00000138
+[2250] COMMIT pc=0x00000174
+[2270] COMMIT pc=0x00000178
+[2290] COMMIT pc=0x0000017c
+[2310] COMMIT pc=0x00000180
+[2330] COMMIT pc=0x00000184
+[2350] COMMIT pc=0x00000188
+[2370] COMMIT pc=0x0000018c
+[2390] COMMIT pc=0x00000190
+[2410] COMMIT pc=0x00000194
+[2430] COMMIT pc=0x00000198
+[2430] REDIRECT: from PC=0x000001a4 to PC=0x00000058
+[2450] COMMIT pc=0x0000019c
+[2470] COMMIT pc=0x000001a0
+ERROR @2490: Write to x0 detected! (rd= 0 data=00000058 pc=000001a4)
+[2490] COMMIT pc=0x000001a4
+[2530] COMMIT pc=0x00000058
+[2550] COMMIT pc=0x0000005c
+[2570] COMMIT pc=0x00000060
+[2590] COMMIT pc=0x00000064
+INFO @2590: stall_id=1 (ID/EX must HOLD)
+INFO @2590: stall_if=1 (PC & IF/ID must HOLD)
+[2610] COMMIT pc=0x00000068
+[2610] REDIRECT: from PC=0x00000070 to PC=0x0000007c
+[2630] COMMIT pc=0x0000006c
+[2650] REDIRECT: from PC=0x0000007c to PC=0x000001a8
+[2670] COMMIT pc=0x00000070
+[2710] COMMIT pc=0x0000007c
+[2750] COMMIT pc=0x000001a8
+[2770] COMMIT pc=0x000001ac
+[2790] COMMIT pc=0x000001b0
+[2810] COMMIT pc=0x000001b4
+[2830] COMMIT pc=0x000001b8
+[2850] COMMIT pc=0x000001bc
+[2870] COMMIT pc=0x000001c0
+[2890] COMMIT pc=0x000001c4
+[2890] REDIRECT: from PC=0x000001d0 to PC=0x00000080
+[2910] COMMIT pc=0x000001c8
+and.PAS
+[2930] COMMIT pc=0x000001cc
+[2930] REDIRECT: from PC=0x00000080 to PC=0x00000084
+[2950] COMMIT pc=0x000001d0
+ERROR @2950: Write to x0 detected! (rd= 0 data=00000080 pc=000001d0)
+[2970] REDIRECT: from PC=0x00000084 to PC=0x0000013c
+[2990] COMMIT pc=0x00000080
+ERROR @2990: Write to x0 detected! (rd= 0 data=00000084 pc=00000080)
+[3030] COMMIT pc=0x00000084
+[3070] COMMIT pc=0x0000013c
+[3090] COMMIT pc=0x00000140
+[3110] COMMIT pc=0x00000144
+[3130] COMMIT pc=0x00000148
+[3130] REDIRECT: from PC=0x00000154 to PC=0x00000174
+[3150] COMMIT pc=0x0000014c
+[3170] COMMIT pc=0x00000150
+[3190] COMMIT pc=0x00000154
+ERROR @3190: Write to x0 detected! (rd= 0 data=00000174 pc=00000154)
+[3230] COMMIT pc=0x00000174
+[3250] COMMIT pc=0x00000178
+[3270] COMMIT pc=0x0000017c
+[3290] COMMIT pc=0x00000180
+[3310] COMMIT pc=0x00000184
+[3330] COMMIT pc=0x00000188
+[3350] COMMIT pc=0x0000018c
+[3370] COMMIT pc=0x00000190
+[3390] COMMIT pc=0x00000194
+[3410] COMMIT pc=0x00000198
+[3410] REDIRECT: from PC=0x000001a4 to PC=0x00000088
+[3430] COMMIT pc=0x0000019c
+[3450] COMMIT pc=0x000001a0
+[3470] COMMIT pc=0x000001a4
+ERROR @3470: Write to x0 detected! (rd= 0 data=00000088 pc=000001a4)
+[3510] COMMIT pc=0x00000088
+INFO @3530: stall_id=1 (ID/EX must HOLD)
+INFO @3530: stall_if=1 (PC & IF/ID must HOLD)
+[3530] COMMIT pc=0x0000008c
+[3550] COMMIT pc=0x00000090
+[3550] REDIRECT: from PC=0x00000098 to PC=0x000000a4
+[3570] COMMIT pc=0x00000094
+[3590] REDIRECT: from PC=0x000000a4 to PC=0x000001a8
+[3610] COMMIT pc=0x00000098
+[3650] COMMIT pc=0x000000a4
+[3690] COMMIT pc=0x000001a8
+[3710] COMMIT pc=0x000001ac
+[3730] COMMIT pc=0x000001b0
+[3750] COMMIT pc=0x000001b4
+[3770] COMMIT pc=0x000001b8
+[3790] COMMIT pc=0x000001bc
+[3810] COMMIT pc=0x000001c0
+[3830] COMMIT pc=0x000001c4
+[3830] REDIRECT: from PC=0x000001d0 to PC=0x000000a8
+[3850] COMMIT pc=0x000001c8
+or.PAS
+[3870] COMMIT pc=0x000001cc
+[3870] REDIRECT: from PC=0x000000a8 to PC=0x000000ac
+ERROR @3890: Write to x0 detected! (rd= 0 data=000000a8 pc=000001d0)
+[3890] COMMIT pc=0x000001d0
+[3910] REDIRECT: from PC=0x000000ac to PC=0x00000158
+ERROR @3930: Write to x0 detected! (rd= 0 data=000000ac pc=000000a8)
+[3930] COMMIT pc=0x000000a8
+[3970] COMMIT pc=0x000000ac
+[4010] COMMIT pc=0x00000158
+[4030] COMMIT pc=0x0000015c
+[4050] COMMIT pc=0x00000160
+[4070] COMMIT pc=0x00000164
+[4070] REDIRECT: from PC=0x00000170 to PC=0x00000174
+[4090] COMMIT pc=0x00000168
+[4110] COMMIT pc=0x0000016c
+ERROR @4130: Write to x0 detected! (rd= 0 data=00000174 pc=00000170)
+[4130] COMMIT pc=0x00000170
+[4170] COMMIT pc=0x00000174
+[4190] COMMIT pc=0x00000178
+[4210] COMMIT pc=0x0000017c
+[4230] COMMIT pc=0x00000180
+[4250] COMMIT pc=0x00000184
+[4270] COMMIT pc=0x00000188
+[4290] COMMIT pc=0x0000018c
+[4310] COMMIT pc=0x00000190
+[4330] COMMIT pc=0x00000194
+[4350] COMMIT pc=0x00000198
+[4350] REDIRECT: from PC=0x000001a4 to PC=0x000000b0
+[4370] COMMIT pc=0x0000019c
+[4390] COMMIT pc=0x000001a0
+ERROR @4410: Write to x0 detected! (rd= 0 data=000000b0 pc=000001a4)
+[4410] COMMIT pc=0x000001a4
+[4450] COMMIT pc=0x000000b0
+[4470] COMMIT pc=0x000000b4
+INFO @4470: stall_id=1 (ID/EX must HOLD)
+INFO @4470: stall_if=1 (PC & IF/ID must HOLD)
+[4490] COMMIT pc=0x000000b8
+[4490] REDIRECT: from PC=0x000000c0 to PC=0x000000cc
+[4510] COMMIT pc=0x000000bc
+[4530] REDIRECT: from PC=0x000000cc to PC=0x000001a8
+[4550] COMMIT pc=0x000000c0
+[4590] COMMIT pc=0x000000cc
+[4630] COMMIT pc=0x000001a8
+[4650] COMMIT pc=0x000001ac
+[4670] COMMIT pc=0x000001b0
+[4690] COMMIT pc=0x000001b4
+[4710] COMMIT pc=0x000001b8
+[4730] COMMIT pc=0x000001bc
+[4750] COMMIT pc=0x000001c0
+[4770] COMMIT pc=0x000001c4
+[4770] REDIRECT: from PC=0x000001d0 to PC=0x000000d0
+[4790] COMMIT pc=0x000001c8
+xor.PAS
+[4810] COMMIT pc=0x000001cc
+[4810] REDIRECT: from PC=0x000000d0 to PC=0x000000d4
+[4830] COMMIT pc=0x000001d0
+ERROR @4830: Write to x0 detected! (rd= 0 data=000000d0 pc=000001d0)
+[4870] COMMIT pc=0x000000d0
+ERROR @4870: Write to x0 detected! (rd= 0 data=000000d4 pc=000000d0)
+[4910] COMMIT pc=0x000000d4
+[4930] COMMIT pc=0x000000d8
+[4930] REDIRECT: from PC=0x000000e4 to PC=0x000000e4
+[4950] COMMIT pc=0x000000dc
+[4970] COMMIT pc=0x000000e0
+[4970] REDIRECT: from PC=0x000000e4 to PC=0x000000e4
+
+Result
+
+IPC          = 0.82
+Mispred Rate = 14.29 %
+
+END of ISA tests
+
+./../01_bench/scoreboard.sv:152: $finish called at 4980 (1s)
