@@ -44,7 +44,7 @@ module output_mux(
 );
 
   // Load data multiplexer: select DMEM or I/O based on address
-  always_comb begin
+  always @(*) begin
     o_ld_data = 32'd0;
     if (f_dmem_valid) begin
       o_ld_data = b_dmem_data;

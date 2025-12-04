@@ -45,7 +45,7 @@ module stage_if (
     assign update_index = i_btb_update_pc[BTB_INDEX_BITS+1:2];
 
     // BTB Read
-    always_comb begin
+    always @(*) begin
         pred_taken = 1'b0;
         pc_pred = pc_plus4;
         
@@ -56,7 +56,7 @@ module stage_if (
     end
 
     // BTB Write
-    always_ff @(posedge i_clk) begin
+    always @(posedge i_clk) begin
         if (!i_reset) begin
             for (int i = 0; i < BTB_SIZE; i++) begin
                 btb_valid[i] <= 1'b0;
@@ -81,7 +81,7 @@ module stage_if (
     );
 
     // Next PC Logic
-    always_comb begin
+    always @(*) begin
         if (i_redirect_valid) begin
             pc_next = i_redirect_pc;
         end else if (pred_taken) begin
@@ -92,7 +92,7 @@ module stage_if (
     end
 
     // PC Update
-    always_ff @(posedge i_clk) begin
+    always @(posedge i_clk) begin
         if (!i_reset) begin
             r_pc <= 32'b0;
         end else if (i_stall) begin

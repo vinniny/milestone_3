@@ -39,7 +39,7 @@ module ex_mem_reg (
     output logic [2:0]  o_ctrl_funct3
 );
 
-    always_ff @(posedge i_clk) begin
+    always @(posedge i_clk) begin
         if (!i_reset) begin
             o_pc <= 32'b0;
             o_alu_result <= 32'b0;
@@ -99,17 +99,14 @@ module ex_mem_reg (
                     o_alu_result <= 32'b0;
                     o_store_data <= 32'b0;
 `ifndef SYNTHESIS
-                    if ($time > 190 && $time < 320) begin
-                        $display("EX/MEM @%0t: BUBBLE - zeroing store_data (was %h)", $time, i_store_data);
-                    end
+
 `endif
                 end else begin
                     o_alu_result <= i_alu_result;
                     o_store_data <= i_store_data;
 `ifndef SYNTHESIS
                     if ($time > 190 && $time < 320 && $isunknown(i_store_data)) begin
-                        $display("EX/MEM @%0t: NOT BUBBLE but store_data=X! bubble=%b valid=%b kill=%b mem_write=%b",
-                                 $time, i_ctrl_bubble, i_ctrl_valid, i_ctrl_kill, i_ctrl_mem_write);
+                        
                     end
 `endif
                 end
@@ -132,10 +129,7 @@ module ex_mem_reg (
     // Diagnostic: Show what's actually IN the EX/MEM register after clock edge
 `ifndef SYNTHESIS
     always @(posedge i_clk) begin
-        if ($time > 190 && $time < 320 && o_ctrl_valid && !o_ctrl_bubble && o_ctrl_mem_write) begin
-            $display("EX/MEM OUT @%0t: pc=%h mem_write=%b store_data=%h", 
-                     $time, o_pc, o_ctrl_mem_write, o_store_data);
-        end
+
     end
 `endif
 

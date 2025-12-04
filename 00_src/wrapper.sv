@@ -78,7 +78,7 @@ module wrapper (
     // Board LED assignments
     // -------------------------------------------------------------------------
     // Show core LEDR[8:0] on board, and use LEDR[9] as "instruction valid" pulse
-    always_comb begin
+    always @(*) begin
         LEDR[8:0] = ledr32[8:0];
         LEDR[9]   = insn_vld;
     end

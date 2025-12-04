@@ -35,7 +35,7 @@ module mem_wb_reg (
     output logic [2:0]  o_ctrl_funct3
 );
 
-    always_ff @(posedge i_clk) begin
+    always @(posedge i_clk) begin
         if (!i_reset) begin
             o_pc <= 32'b0;
             o_alu_result <= 32'b0;

@@ -42,7 +42,7 @@ module forwarding_unit (
                          && (i_mem_wb_rd != 5'd0);
 
     // EX Forwarding Logic
-    always_comb begin
+    always @(*) begin
         o_forward_a_sel = 2'b00; // Default: RF
         
         // Priority: EX/MEM > MEM/WB
@@ -53,7 +53,7 @@ module forwarding_unit (
         end
     end
 
-    always_comb begin
+    always @(*) begin
         o_forward_b_sel = 2'b00; // Default: RF
         
         if (can_fwd_ex_mem && (i_ex_mem_rd == i_id_ex_rs2)) begin
@@ -64,7 +64,7 @@ module forwarding_unit (
     end
 
     // ID Forwarding Logic (For Branch Comparator)
-    always_comb begin
+    always @(*) begin
         o_forward_id_a_sel = 2'b00; // Default: RF
         
         // Priority: EX/MEM > MEM/WB
@@ -75,7 +75,7 @@ module forwarding_unit (
         end
     end
 
-    always_comb begin
+    always @(*) begin
         o_forward_id_b_sel = 2'b00; // Default: RF
         
         if (can_fwd_ex_mem && (i_ex_mem_rd == i_id_rs2)) begin

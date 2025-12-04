@@ -18,7 +18,7 @@ module brc(
   wire  lt_mag;                     // Magnitude less-than (unsigned)
 
   // Comparison logic
-  always_comb begin
+  always @(*) begin
     o_br_equal = eq_mag;
     
     if (i_br_un) begin

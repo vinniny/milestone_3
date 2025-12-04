@@ -112,7 +112,7 @@ module lsu(
   //   - SH/LH (funct3=001/101): Misaligned if addr[0] != 0
   //   - SW/LW (funct3=010):     Misaligned if addr[1:0] != 00
 
-  always_comb begin
+  always @(*) begin
     misaligned_access = 1'b0;
     case (i_funct3)
       3'b001, 3'b101: misaligned_access = i_lsu_addr[0];        // SH/LH: misaligned if addr[0] != 0
@@ -130,7 +130,7 @@ module lsu(
   // For SW: Pass through word unchanged, enable all lanes
   // Misaligned stores are blocked (all enables = 0)
   
-  always_comb begin
+  always @(*) begin
     dmem_byte_enable = 4'b0000;
     dmem_write_data = i_st_data;
     
@@ -189,7 +189,7 @@ module lsu(
   logic        is_unsigned;     // Load unsigned flag
 
   // Step 1: Select byte/halfword using narrow 2-bit address mux
-  always_comb begin
+  always @(*) begin
     case (i_lsu_addr[1:0])
       2'b00: selected_byte = dmem_read_data[7:0];
       2'b01: selected_byte = dmem_read_data[15:8];
@@ -198,7 +198,7 @@ module lsu(
     endcase
   end
 
-  always_comb begin
+  always @(*) begin
     case (i_lsu_addr[1])
       1'b0: selected_half = dmem_read_data[15:0];
       1'b1: selected_half = dmem_read_data[31:16];
@@ -211,7 +211,7 @@ module lsu(
   assign extended_half = is_unsigned ? {16'b0, selected_half} : {{16{selected_half[15]}}, selected_half};
 
   // Step 3: Final mux based on load type (after extension)
-  always_comb begin
+  always @(*) begin
     if (misaligned_access) begin
       processed_read_data = 32'b0;  // Return 0 for misaligned
     end else begin

@@ -61,21 +61,15 @@ module stage_mem (
     // Debug: Monitor I/O write conditions
     always @(posedge i_clk) begin
         if ($time > 200 && $time < 1500) begin
-            if (i_alu_result[31:16] == 16'h1000) begin
-                $display("STAGE_MEM @%0t: IO addr=0x%08h mem_write=%b f_io_valid=%b",
-                         $time, i_alu_result, i_mem_write, f_io_valid);
-            end
+
         end
         // Diagnostic: Show what MEM actually sees
-        if ($time > 190 && $time < 320 && i_mem_write) begin
-            $display("MEM IN @%0t: mem_write=%b f_io_valid=%b i_store_data=%h",
-                     $time, i_mem_write, f_io_valid, i_store_data);
-        end
+
     end
 `endif
 
     // Misalignment Detection
-    always_comb begin
+    always @(*) begin
         misaligned_access = 1'b0;
         case (i_funct3)
             3'b001, 3'b101: misaligned_access = i_alu_result[0];        // SH/LH
@@ -85,7 +79,7 @@ module stage_mem (
     end
 
     // Store Data Prep
-    always_comb begin
+    always @(*) begin
         dmem_byte_enable = 4'b0000;
         dmem_write_data = i_store_data;
         
@@ -159,7 +153,7 @@ module stage_mem (
     );
 
     // I/O Read Mux
-    always_comb begin
+    always @(*) begin
         io_rdata_comb = 32'd0;
         if (f_io_valid) begin
             if (i_alu_result[31:16] == 16'h1001) begin
@@ -178,7 +172,7 @@ module stage_mem (
     end
 
     // Register I/O Read Data
-    always_ff @(posedge i_clk) begin
+    always @(posedge i_clk) begin
         if (i_reset) begin
             o_io_rdata <= 32'b0;
         end else begin
@@ -194,10 +188,7 @@ module stage_mem (
 `ifndef SYNTHESIS
     // Debug: Monitor b_io_ledr register
     always @(posedge i_clk) begin
-        if ($time > 200 && $time < 1500) begin
-            $display("STAGE_MEM @%0t: b_io_ledr=0x%08h o_io_ledr=0x%08h", 
-                     $time, b_io_ledr, o_io_ledr);
-        end
+
     end
 `endif
     assign o_io_hex0 = b_io_hexl[ 6: 0];

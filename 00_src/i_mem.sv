@@ -20,8 +20,13 @@ module i_mem (
   // Load instruction memory from hex file
   // For FPGA synthesis: Quartus supports $readmemh in initial blocks
   // Memory contents are baked into the FPGA bitstream
+  // Initialize all memory to NOP (addi x0, x0, 0) to prevent X-propagation
   initial begin
-    $readmemh("../02_test/isa_test_32bit.hex", mem);
+    integer i;
+    for (i = 0; i < 16384; i = i + 1) begin
+      mem[i] = 32'h00000013;  // NOP instruction (addi x0, x0, 0)
+    end
+    $readmemh("../02_test/isa_4b.hex", mem);
   end
 
   // Asynchronous read: convert byte address to word address

@@ -39,7 +39,7 @@ module imm_gen(
   assign u_imm = {i_instr[31:12], 12'b0};
 
   // Select immediate based on opcode
-  always_comb begin
+  always @(*) begin
     case (i_instr[6:0])
       7'b0010011,  // I-type (ALU immediate: ADDI, SLTI, etc.)
       7'b0000011,  // I-type (Load: LB, LH, LW, etc.)

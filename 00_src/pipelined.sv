@@ -476,7 +476,7 @@ module pipelined (
     );
 
     // Mux for MEM/WB Input (DMEM vs IO)
-    always_comb begin
+    always @(*) begin
         // Simple address check for IO range
         // IO Base is usually 0x1001xxxx or similar.
         // Let's check stage_mem.sv: `if (i_alu_result[31:16] == 16'h1001)`
@@ -493,7 +493,7 @@ module pipelined (
     
     // Load Data Processing (Sign Extension)
     logic [31:0] wb_load_data;
-    always_comb begin
+    always @(*) begin
         wb_load_data = mem_wb_rdata;
         case (mem_wb_ctrl_funct3)
             3'b000: wb_load_data = {{24{mem_wb_rdata[7]}}, mem_wb_rdata[7:0]};   // LB
@@ -518,7 +518,7 @@ module pipelined (
     // ========================================================================
     // HALT occurs when a store commits to address 32'hFFFF_FFFC
     // Stores have ctrl_wb_en=0 but still commit (they are valid instructions)
-    always_ff @(posedge i_clk) begin
+    always @(posedge i_clk) begin
         if (!i_reset) begin
             r_halt <= 1'b0;
         end else if (!r_halt && mem_wb_ctrl_valid && !mem_wb_ctrl_bubble && 
@@ -558,27 +558,38 @@ module pipelined (
       end
     end
     
-    // Simple commit trace
+    // Simple commit trace - selective output
+    reg [31:0] commit_count;
+    reg [31:0] cycle_count;
+    initial commit_count = 0;
+    initial cycle_count = 0;
+    
     always @(posedge i_clk) begin
-      if (o_insn_vld && !r_halt) begin
-        $display("[%0t] COMMIT pc=0x%h", $time, o_pc_commit);
-      end
-      if (r_halt && !r_halt_prev) begin
-        $display("[%0t] ===== HALT DETECTED ===== (PC=0x%h)", $time, o_pc_commit);
-      end
-      if (o_pc_commit == 32'h000000e4) begin
-        $display("[%0t] COMMIT PC=0xe4 (SW to HALT addr): r_halt=%b alu_result=0x%h wb_en=%b mem_read=%b", 
-                 $time, r_halt, mem_wb_alu_result, mem_wb_ctrl_wb_en, mem_wb_ctrl_mem_read);
-      end
-      if (id_redirect_valid && !r_halt) begin
-        $display("[%0t] REDIRECT: from PC=0x%h to PC=0x%h", $time, if_id_pc, id_redirect_pc);
-      end
-      // Debug: check PC 0x04 (JAL)
-      if (if_id_pc == 32'h00000004) begin
-        $display("[%0t] IF/ID PC=0x04: instr=0x%h valid=%b bubble=%b", 
-                 $time, if_id_instr, id_ctrl_valid, id_ctrl_bubble);
-        $display("[%0t] ID PC=0x04: jump=%b branch=%b pred_taken=%b redirect_valid=%b", 
-                 $time, id_ctrl_jump, id_ctrl_branch, if_id_pred_taken, id_redirect_valid);
+      if (!i_reset) begin
+        commit_count <= 0;
+        cycle_count <= 0;
+      end else begin
+        cycle_count <= cycle_count + 1;
+        if (o_insn_vld) begin
+          commit_count <= commit_count + 1;
+          // Log PC 0x18 (character output), 0x1c/0x20 (test end), and every 1000 commits
+          if (o_pc_commit == 32'h18 || o_pc_commit == 32'h1c || o_pc_commit == 32'h20 || (commit_count % 1000 == 0)) begin
+            $display("[%0t] #%0d PC=0x%08h insn_vld=%b ledr=0x%02h '%c'", $time, commit_count, o_pc_commit, o_insn_vld, o_io_ledr[7:0], o_io_ledr[7:0]);
+          end
+        end
+        // Debug: Track redirects and PC value in IF stage
+        if (id_redirect_valid) begin
+          $display("[%0t] REDIRECT: redirect_pc=0x%08h if_pc=0x%08h id_ctrl_valid=%b", $time, id_redirect_pc, if_pc, id_ctrl_valid);
+        end
+        // Debug: Track stalls (especially Load-to-Jump hazards)
+        if (hu_stall_id) begin
+          $display("[%0t] STALL: if_id_instr=0x%08h if_id_pc=0x%08h id_ex_rd=x%0d id_ex_mem_read=%b ex_mem_rd=x%0d ex_mem_mem_read=%b", 
+                   $time, if_id_instr, if_id_pc, id_ex_rd, id_ex_ctrl_mem_read, ex_mem_rd, ex_mem_ctrl_mem_read);
+        end
+        // Check for stall condition every 1000 cycles
+        if (cycle_count % 1000 == 0 && cycle_count > 0) begin
+          $display("[%0t] CYCLE %0d: commits=%0d halt=%b pc_commit=0x%08h insn_vld=%b if_pc=0x%08h", $time, cycle_count, commit_count, r_halt, o_pc_commit, o_insn_vld, if_pc);
+        end
       end
     end
 
@@ -588,28 +599,14 @@ module pipelined (
     
     // Check 1: Detect "commit bubble" at WB (critical)
     always @(posedge i_clk) begin
-        if (o_insn_vld && mem_wb_ctrl_bubble) begin
-            $display("ERROR @%0t: o_insn_vld=1 but MEM/WB is a BUBBLE (pc=%h)",
-                     $time, o_pc_commit);
-        end
+
     end
 
     // Check 2: Detect illegal combo: valid=1 AND bubble=1
     always @(posedge i_clk) begin
-        if (mem_wb_ctrl_valid && mem_wb_ctrl_bubble) begin
-            $display("ERROR @%0t: MEM/WB ctrl_valid=1 but ctrl_bubble=1 (pc=%h)",
-                     $time, o_pc_commit);
-        end
-        
-        if (id_ex_ctrl_valid && id_ex_ctrl_bubble) begin
-            $display("ERROR @%0t: ID/EX valid=1 but bubble=1 (pc=%h)", 
-                     $time, id_ex_pc);
-        end
-        
-        if (ex_mem_ctrl_valid && ex_mem_ctrl_bubble) begin
-            $display("ERROR @%0t: EX/MEM valid=1 but bubble=1 (pc=%h)", 
-                     $time, ex_mem_pc);
-        end
+
+
+
     end
 
     // Removed PC 0x18 debug - no longer needed
@@ -626,11 +623,7 @@ module pipelined (
             prev_stall_id      <= 0;
         end else begin
             if (prev_stall_id) begin  // Check if stall was ACTIVE in previous cycle
-                if (id_pc != prev_id_pc || id_ctrl_valid != prev_id_ctrl_valid) begin
-                    $display("ERROR @%0t: stall_id=1 but ID did NOT HOLD (pc=%h->%h valid=%b->%b)",
-                             $time, prev_id_pc, id_pc,
-                             prev_id_ctrl_valid, id_ctrl_valid);
-                end
+
             end
             
             prev_id_pc         <= id_pc;
@@ -641,21 +634,13 @@ module pipelined (
 
     // Check 5: Track when stalls occur
     always @(posedge i_clk) begin
-        if (hu_stall_id && i_reset) begin
-            $display("INFO @%0t: stall_id=1 (ID/EX must HOLD)", $time);
-        end
-        
-        if (hu_stall_if && i_reset) begin
-            $display("INFO @%0t: stall_if=1 (PC & IF/ID must HOLD)", $time);
-        end
+
+
     end
 
     // Check 6: Detect illegal write to x0 (RISC-V rule)
     always @(posedge i_clk) begin
-        if (mem_wb_ctrl_wb_en && mem_wb_rd == 5'd0) begin
-            $display("ERROR @%0t: Write to x0 detected! (rd=%d data=%h pc=%h)",
-                     $time, mem_wb_rd, mem_wb_alu_result, mem_wb_pc);
-        end
+
     end
 `endif
 

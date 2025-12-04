@@ -53,7 +53,7 @@ module id_ex_reg (
     output logic        o_ctrl_op_b_sel
 );
 
-    always_ff @(posedge i_clk) begin
+    always @(posedge i_clk) begin
         if (!i_reset) begin
             o_pc <= 32'b0;
             o_rs1_val <= 32'b0;

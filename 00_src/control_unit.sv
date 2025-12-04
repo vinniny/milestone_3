@@ -71,8 +71,29 @@ module control_unit (
         .alu_op(o_alu_op)
     );
 
-    // Instruction valid flag - Detect NOP (all zeros)
-	assign o_insn_vld = (i_instr != 32'b0);
+	//==========================================================================
+	// X-detection and instruction validation (Milestone-3 Section 6.8.3)
+	// Terminate X-propagation: treat X or invalid instructions as kill/bubble
+	//==========================================================================
+	logic insn_has_x;
+	logic valid_opcode;
+	
+	// Detect if instruction contains X values (per Milestone-3 Spec 6.8.3)
+	assign insn_has_x = ^i_instr === 1'bx;
+	
+	// Valid RV32I opcodes (base instruction set)
+	assign valid_opcode = (opcode == 7'b0110011) |  // R-type
+	                      (opcode == 7'b0010011) |  // I-type
+	                      (opcode == 7'b0000011) |  // LOAD
+	                      (opcode == 7'b0100011) |  // STORE
+	                      (opcode == 7'b1100011) |  // BRANCH
+	                      (opcode == 7'b1101111) |  // JAL
+	                      (opcode == 7'b1100111) |  // JALR
+	                      (opcode == 7'b0110111) |  // LUI
+	                      (opcode == 7'b0010111);   // AUIPC
+	
+	// Instruction valid: not zero, not X, valid opcode (terminate X-propagation)
+	assign o_insn_vld = (i_instr != 32'b0) & ~insn_has_x & valid_opcode;
 endmodule
 
 //==============================================================================
@@ -165,7 +186,7 @@ module MainDecoder (
 	//==========================================================================
 	// Branch logic - only for BRANCH instructions
 	//==========================================================================
-	always_comb begin
+	always @(*) begin
 		if (is_branch) begin
 			// Branch unsigned mode: BLTU(110) and BGEU(111) are unsigned
 			br_un = (funct3[2:1] == 2'b11);  // 1 for BLTU/BGEU (unsigned), 0 for signed
@@ -223,7 +244,7 @@ module ALUDecoder (
     output logic [3:0] alu_op
 );
 
-always_comb begin
+always @(*) begin
     case (opcode)
         // R-type: Register-register ALU operations
         7'b0110011: begin

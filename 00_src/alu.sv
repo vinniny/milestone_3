@@ -58,7 +58,7 @@ module alu(
   SRA sra_inst(.tmp(i_op_b[4:0]), .A(i_op_a), .Sra_out(sra_result));
 
   // Output multiplexer
-  always_comb begin
+  always @(*) begin
     case(i_alu_op)
       ADD:  o_alu_data = add_result;
       SUB:  o_alu_data = sub_result;

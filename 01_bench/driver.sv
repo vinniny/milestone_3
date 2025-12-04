@@ -1,5 +1,3 @@
-`include "../00_src/pipelined.sv"
-
 module driver (
   input  logic        i_clk  ,
   input  logic        i_reset,

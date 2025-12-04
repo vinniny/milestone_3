@@ -11,7 +11,7 @@ module input_buffer(
 );
 
   // Synchronize inputs on clock edge
-  always_ff @(posedge i_clk) begin
+  always @(posedge i_clk) begin
     if (i_reset) begin
       b_io_sw <= 32'd0;
     end else begin

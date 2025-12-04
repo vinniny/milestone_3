@@ -11,7 +11,7 @@ module PC(
 );
 
   // Synchronous update with asynchronous reset
-  always_ff @(posedge i_clk or negedge i_reset) begin
+  always @(posedge i_clk or negedge i_reset) begin
     if (~i_reset) begin
       o_pc <= 32'd0;                 // Reset PC to 0
     end else begin

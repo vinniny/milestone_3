@@ -94,7 +94,7 @@ module stage_id (
     );
 
     // Forwarding Muxes (Branch Only)
-    always_comb begin
+    always @(*) begin
         case (i_forward_a_sel)
             2'b00: rs1_data_fwd = rs1_data_rf;
             2'b01: rs1_data_fwd = i_wb_write_data; // MEM/WB
@@ -187,7 +187,7 @@ module stage_id (
     assign s_is_mispredict = !i_stall && is_cond_branch && (i_pred_taken != actual_taken);
     
     // Redirect logic: CRITICAL - suppress branch resolution during stalls
-    always_comb begin
+    always @(*) begin
         o_redirect_pc = 32'b0;
         mispredict = 1'b0;
         
@@ -218,11 +218,13 @@ module stage_id (
         end
     end
 
-    assign o_redirect_valid = !i_stall && (mispredict || (opcode == 7'b1101111) || (opcode == 7'b1100111));
+    // Per Milestone-3 Spec 6.8.3: Invalid instructions do NOT redirect
+    // Only valid branches/jumps can trigger redirects
+    assign o_redirect_valid = o_ctrl_valid && !i_stall && (mispredict || (opcode == 7'b1101111) || (opcode == 7'b1100111));
     
-    // BTB Update
+    // BTB Update - only update for valid branch/jump instructions
     // Update if Branch/Jump is Taken
-    assign o_btb_update = actual_taken | ((opcode == 7'b1101111) || (opcode == 7'b1100111));
+    assign o_btb_update = o_ctrl_valid && (actual_taken | ((opcode == 7'b1101111) || (opcode == 7'b1100111)));
     assign o_btb_update_pc = i_pc;
     assign o_btb_update_target = final_target_pc;
 
@@ -237,7 +239,9 @@ module stage_id (
     
     // Control Outputs
     assign o_ctrl_bubble = !o_ctrl_valid; // If invalid, it's a bubble
-    assign o_ctrl_kill = 1'b0; // Illegal instr logic not implemented yet
+    // Per Milestone-3 Spec 6.8.3: Invalid/illegal instructions set ctrl_kill=1
+    // This turns them into bubbles WITHOUT triggering flush/redirect
+    assign o_ctrl_kill = !o_ctrl_valid; // Kill invalid instructions (X or illegal opcode)
     assign o_ctrl_branch = (opcode == 7'b1100011); // Branch opcode (conditional)
     assign o_ctrl_jump = (opcode == 7'b1101111) || (opcode == 7'b1100111); // JAL or JALR
     assign o_ctrl_mispred = s_is_mispredict; // Misprediction flag (conditional branches only)

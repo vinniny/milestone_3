@@ -1,0 +1,2 @@
+-> Compiling with iverilog
+-> Running simulation

@@ -17,7 +17,7 @@ module clock_10M (
    // Full period = 10 cycles at 50MHz = 1 cycle at 10MHz
    logic [2:0] count;  // 3-bit counter (0-7, we only use 0-4)
 
-   always_ff @(posedge clk50 or negedge i_reset) begin
+   always @(posedge clk50 or negedge i_reset) begin
       if (~i_reset) begin
          o_clk <= 1'b0;
          count <= 3'd0;

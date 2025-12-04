@@ -29,7 +29,7 @@ module output_buffer(
   logic        io_write_enable_comb;
 
   // Combinational logic: compute write mask and data
-  always_comb begin
+  always @(*) begin
     // Compute write enable from inputs
     io_write_enable_comb = i_mem_write && i_io_valid && i_ctrl_valid && !i_ctrl_bubble && !i_ctrl_kill;
     addr_offset_comb = i_io_addr[1:0];
@@ -91,7 +91,7 @@ module output_buffer(
   end
 
   // Sequential logic: update registers synchronously
-  always_ff @(posedge i_clk) begin
+  always @(posedge i_clk) begin
     if (~i_reset) begin  // Active-low reset: reset when i_reset=0
       b_io_ledr <= 32'b0;
       b_io_ledg <= 32'b0;
@@ -116,6 +116,6 @@ module output_buffer(
         endcase
       end // if (io_write_enable)
     end // else (not reset)
-  end // always_ff
+  end // always
 
 endmodule

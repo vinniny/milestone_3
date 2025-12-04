@@ -21,10 +21,15 @@ module dmem(
   logic [31:0] mem [0:DEPTH-1];
 
   // Initialize memory from hex file or zero at simulation start
-  // Contents persist across resets (no reset logic in always_ff)
+  // Contents persist across resets (no reset logic in always)
+  // Initialize all memory to zero to prevent X-propagation
   initial begin
-    // Try to load from hex file, if not found initialize to zero
-    $readmemh("../02_test/dmem_init_32bit.hex", mem);
+    integer i;
+    for (i = 0; i < DEPTH; i = i + 1) begin
+      mem[i] = 32'h0;  // Initialize all data memory to zero
+    end
+    // Try to load from hex file, if not found already initialized to zero
+    // $readmemh("../02_test/isa_4b.hex", mem);
   end
 
   // Convert byte address to word address
@@ -37,7 +42,7 @@ module dmem(
   // Synchronous write with per-byte enables
   // Implements byte-enable writes without read-modify-write
   // Infers BRAM with byte enables on FPGA
-  always_ff @(posedge i_clk) begin
+  always @(posedge i_clk) begin
     if (wren[0]) mem[word_addr][7:0]   <= data[7:0];    // Byte 0
     if (wren[1]) mem[word_addr][15:8]  <= data[15:8];   // Byte 1
     if (wren[2]) mem[word_addr][23:16] <= data[23:16];  // Byte 2

@@ -16,7 +16,7 @@ module if_id_reg (
     output logic        o_kill
 );
 
-    always_ff @(posedge i_clk) begin
+    always @(posedge i_clk) begin
         if (!i_reset) begin
             o_pc <= 32'b0;
             o_instr <= 32'b0;

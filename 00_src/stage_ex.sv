@@ -25,7 +25,7 @@ module stage_ex (
     logic [31:0] op_b;
 
     // Forwarding Muxes
-    always_comb begin
+    always @(*) begin
         case (i_forward_a_sel)
             2'b00: rs1_fwd = i_rs1_val;
             2'b01: rs1_fwd = i_wb_write_data;
@@ -43,14 +43,13 @@ module stage_ex (
 `ifndef SYNTHESIS
         // Debug X-values in rs2 forwarding (simulation only)
         if ($isunknown(rs2_fwd)) begin
-            $display("EX STAGE X @%0t: fwd_b_sel=%b rs2_val=%h wb_data=%h ex_mem_alu=%h -> rs2_fwd=%h",
-                     $time, i_forward_b_sel, i_rs2_val, i_wb_write_data, i_ex_mem_alu_result, rs2_fwd);
+            
         end
 `endif
     end
 
     // Operand Muxes
-    always_comb begin
+    always @(*) begin
         case (i_op_a_sel)
             2'b00: op_a = rs1_fwd;
             2'b01: op_a = i_pc;

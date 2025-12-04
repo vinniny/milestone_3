@@ -33,7 +33,7 @@ module hazard_unit (
 
     // Load-Use Hazard (ALU consumer or Branch consumer)
     // If instruction in EX is a load and writes to rs1 or rs2 used by ID
-    always_comb begin
+    always @(*) begin
         stall_load_use = 1'b0;
         if (i_id_ex_mem_read && i_id_ex_rd != 5'b0) begin
             if ((i_use_rs1 && i_rs1 == i_id_ex_rd) || 
@@ -47,7 +47,7 @@ module hazard_unit (
     // If instruction in MEM is a load and writes to rs1 or rs2 used by Branch in ID
     // Note: If it was in EX, stall_load_use would catch it.
     // But if it moved to MEM, stall_load_use is 0. We need to catch it here.
-    always_comb begin
+    always @(*) begin
         stall_branch_load = 1'b0;
         if (i_is_branch || i_is_jump) begin // JALR also needs rs1
              if (i_ex_mem_mem_read && i_ex_mem_rd != 5'b0) begin
@@ -63,7 +63,7 @@ module hazard_unit (
     // If instruction in EX writes to a register that Branch in ID needs
     // We can't forward from EX to ID (only from EX/MEM or MEM/WB)
     // So we must stall until the producing instruction reaches EX/MEM
-    always_comb begin
+    always @(*) begin
         stall_branch_alu = 1'b0;
         if (i_is_branch || i_is_jump) begin
             // Check if ID/EX stage has an instruction writing to rs1 or rs2
