@@ -1,5 +1,3 @@
-`include "tlib.svh"
-
 `define RESET_PERIOD 51
 `define CLOCK_PERIOD 2
 `define TIMEOUT      10_000_000
@@ -23,7 +21,12 @@ module tbench;
     rstn = 1'b1;
   end
   
-  initial tsk_timeout(`TIMEOUT);
+  // Timeout
+  initial begin
+    #`TIMEOUT;
+    $display("\nTimeout...\n");
+    $finish;
+  end
 
   // Wave dumping - Icarus Verilog compatible
   initial begin: proc_dump_vcd

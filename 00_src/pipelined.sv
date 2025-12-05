@@ -572,23 +572,10 @@ module pipelined (
         cycle_count <= cycle_count + 1;
         if (o_insn_vld) begin
           commit_count <= commit_count + 1;
-          // Log PC 0x18 (character output), 0x1c/0x20 (test end), and every 1000 commits
-          if (o_pc_commit == 32'h18 || o_pc_commit == 32'h1c || o_pc_commit == 32'h20 || (commit_count % 1000 == 0)) begin
-            $display("[%0t] #%0d PC=0x%08h insn_vld=%b ledr=0x%02h '%c'", $time, commit_count, o_pc_commit, o_insn_vld, o_io_ledr[7:0], o_io_ledr[7:0]);
+          // Debug: Show when we reach the critical load instruction
+          if (mem_wb_pc == 32'h254) begin
+            $display("[PC=0x254] wb_write_data=0x%h mem_read=%b wb_en=%b", wb_write_data, mem_wb_ctrl_mem_read, mem_wb_ctrl_wb_en);
           end
-        end
-        // Debug: Track redirects and PC value in IF stage
-        if (id_redirect_valid) begin
-          $display("[%0t] REDIRECT: redirect_pc=0x%08h if_pc=0x%08h id_ctrl_valid=%b", $time, id_redirect_pc, if_pc, id_ctrl_valid);
-        end
-        // Debug: Track stalls (especially Load-to-Jump hazards)
-        if (hu_stall_id) begin
-          $display("[%0t] STALL: if_id_instr=0x%08h if_id_pc=0x%08h id_ex_rd=x%0d id_ex_mem_read=%b ex_mem_rd=x%0d ex_mem_mem_read=%b", 
-                   $time, if_id_instr, if_id_pc, id_ex_rd, id_ex_ctrl_mem_read, ex_mem_rd, ex_mem_ctrl_mem_read);
-        end
-        // Check for stall condition every 1000 cycles
-        if (cycle_count % 1000 == 0 && cycle_count > 0) begin
-          $display("[%0t] CYCLE %0d: commits=%0d halt=%b pc_commit=0x%08h insn_vld=%b if_pc=0x%08h", $time, cycle_count, commit_count, r_halt, o_pc_commit, o_insn_vld, if_pc);
         end
       end
     end

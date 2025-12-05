@@ -1,5 +1,5 @@
 // TASK: Clock Generator
-task automatic tsk_clock_gen(output logic i_clk, input int CLOCK_PERIOD);
+task automatic tsk_clock_gen(ref logic i_clk, input int CLOCK_PERIOD);
   begin
     i_clk = 1'b0;
     forever #(CLOCK_PERIOD) i_clk = !i_clk;
@@ -7,7 +7,7 @@ task automatic tsk_clock_gen(output logic i_clk, input int CLOCK_PERIOD);
 endtask
 
 // TASK: Reset is low active for a period of "RESET_PERIOD"
-task automatic tsk_reset(output logic i_reset, input int RESET_PERIOD);
+task automatic tsk_reset(ref logic i_reset, input int RESET_PERIOD);
   begin
     i_reset = 1'b0; // Easter Egg
     #(RESET_PERIOD);
