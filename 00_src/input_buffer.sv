@@ -10,13 +10,13 @@ module input_buffer(
   output logic [31:0] b_io_sw        // Buffered switch values (synchronized)
 );
 
-  // Synchronize inputs on clock edge
+  // Synchronize inputs on clock edge (active-low reset)
   always @(posedge i_clk) begin
-    if (i_reset) begin
+    if (!i_reset) begin  // Active-low reset
       b_io_sw <= 32'd0;
     end else begin
       b_io_sw <= i_io_sw;            // Register input
     end
   end
-
+  
 endmodule

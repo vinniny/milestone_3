@@ -4,9 +4,8 @@ module driver (
   output logic [31:0] i_io_sw
 );
 
-  initial begin
-    i_io_sw = 32'h12345678;
-  end
+  // Drive switches with constant value
+  assign i_io_sw = 32'h12345678;
 
 endmodule : driver
 

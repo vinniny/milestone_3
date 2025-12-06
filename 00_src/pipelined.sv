@@ -17,7 +17,7 @@ module pipelined (
     output logic [6:0]  o_io_hex7,
     output logic [31:0] o_io_lcd,
     output logic [31:0] o_pc_frontend,
-    output logic [31:0] o_pc_commit,
+    output logic [31:0] o_pc_debug,
     output logic        o_insn_vld,
     output logic        o_ctrl,
     output logic        o_mispred,
@@ -34,6 +34,9 @@ module pipelined (
     logic hu_stall_id;
     logic hu_flush_id_ex;
     logic hu_flush_if_id;
+    
+    // --- Memory Stall Signal ---
+    logic mem_stall_req;
 
     // --- Forwarding Unit Signals ---
     logic [1:0] fu_forward_a_sel;    // EX ALU Op A
@@ -178,6 +181,7 @@ module pipelined (
         .i_id_ex_reg_write(id_ex_ctrl_wb_en),
         .i_ex_mem_rd(ex_mem_rd),
         .i_ex_mem_mem_read(ex_mem_ctrl_mem_read),
+        .i_mem_stall_req(mem_stall_req),
         .o_stall_if(hu_stall_if),
         .o_stall_id(hu_stall_id),
         .o_flush_id_ex(hu_flush_id_ex),
@@ -369,6 +373,7 @@ module pipelined (
         .i_alu_op(id_ex_ctrl_alu_op),
         .i_op_a_sel(id_ex_ctrl_op_a_sel),
         .i_op_b_sel(id_ex_ctrl_op_b_sel),
+        .i_is_jump(id_ex_ctrl_jump),         // Jump signal for PC+4 forwarding fix
         .i_forward_a_sel(fu_forward_a_sel),
         .i_forward_b_sel(fu_forward_b_sel),
         .i_ex_mem_alu_result(ex_mem_alu_result),
@@ -383,7 +388,7 @@ module pipelined (
     ex_mem_reg u_ex_mem_reg (
         .i_clk(i_clk),
         .i_reset(i_reset),
-        .i_stall(1'b0), // MEM stall?
+        .i_stall(mem_stall_req), // Stall when MEM stage needs multiple cycles
         .i_flush(1'b0), // No flush in EX/MEM usually
         .i_pc(id_ex_pc),
         .i_alu_result(ex_alu_result),
@@ -440,7 +445,8 @@ module pipelined (
         .o_io_hex7(o_io_hex7),
         .o_io_lcd(o_io_lcd),
         .o_dmem_rdata(mem_dmem_rdata),
-        .o_io_rdata(mem_io_rdata)
+        .o_io_rdata(mem_io_rdata),
+        .o_mem_stall_req(mem_stall_req)
     );
 
     // ------------------------------------------------------------------------
@@ -449,7 +455,7 @@ module pipelined (
     mem_wb_reg u_mem_wb_reg (
         .i_clk(i_clk),
         .i_reset(i_reset),
-        .i_stall(1'b0),
+        .i_stall(mem_stall_req),  // Stall when waiting for second memory access
         .i_flush(1'b0),
         .i_pc(ex_mem_pc),
         .i_alu_result(ex_mem_alu_result),
@@ -486,32 +492,65 @@ module pipelined (
             mem_rdata_muxed = mem_dmem_rdata;
         end
     end
-
+    
     // ------------------------------------------------------------------------
-    // WB Stage Logic
+    // WB Stage Logic - Load Data Alignment + Sign Extension
     // ------------------------------------------------------------------------
     
-    // Load Data Processing (Sign Extension)
+    // Load Data Processing (Alignment + Sign Extension)
     logic [31:0] wb_load_data;
+    logic [1:0]  byte_offset;
+    
+    // Extract alignment bits from the Memory Address
+    assign byte_offset = mem_wb_alu_result[1:0];
+
     always @(*) begin
-        wb_load_data = mem_wb_rdata;
+        wb_load_data = mem_wb_rdata; // Default (LW)
+
         case (mem_wb_ctrl_funct3)
-            3'b000: wb_load_data = {{24{mem_wb_rdata[7]}}, mem_wb_rdata[7:0]};   // LB
-            3'b001: wb_load_data = {{16{mem_wb_rdata[15]}}, mem_wb_rdata[15:0]}; // LH
-            3'b010: wb_load_data = mem_wb_rdata;                                 // LW
-            3'b100: wb_load_data = {24'b0, mem_wb_rdata[7:0]};                   // LBU
-            3'b101: wb_load_data = {16'b0, mem_wb_rdata[15:0]};                  // LHU
+            3'b000: begin // LB (Load Byte)
+                case (byte_offset)
+                    2'b00: wb_load_data = {{24{mem_wb_rdata[7]}},   mem_wb_rdata[7:0]};
+                    2'b01: wb_load_data = {{24{mem_wb_rdata[15]}},  mem_wb_rdata[15:8]};
+                    2'b10: wb_load_data = {{24{mem_wb_rdata[23]}},  mem_wb_rdata[23:16]};
+                    2'b11: wb_load_data = {{24{mem_wb_rdata[31]}},  mem_wb_rdata[31:24]};
+                endcase
+            end
+            
+            3'b001: begin // LH (Load Halfword)
+                case (byte_offset[1]) // check bit 1
+                    1'b0: wb_load_data = {{16{mem_wb_rdata[15]}}, mem_wb_rdata[15:0]};
+                    1'b1: wb_load_data = {{16{mem_wb_rdata[31]}}, mem_wb_rdata[31:16]};
+                endcase
+            end
+            
+            3'b010: wb_load_data = mem_wb_rdata; // LW (Load Word)
+            
+            3'b100: begin // LBU (Load Byte Unsigned)
+                case (byte_offset)
+                    2'b00: wb_load_data = {24'b0, mem_wb_rdata[7:0]};
+                    2'b01: wb_load_data = {24'b0, mem_wb_rdata[15:8]};
+                    2'b10: wb_load_data = {24'b0, mem_wb_rdata[23:16]};
+                    2'b11: wb_load_data = {24'b0, mem_wb_rdata[31:24]};
+                endcase
+            end
+            
+            3'b101: begin // LHU (Load Halfword Unsigned)
+                case (byte_offset[1])
+                    1'b0: wb_load_data = {16'b0, mem_wb_rdata[15:0]};
+                    1'b1: wb_load_data = {16'b0, mem_wb_rdata[31:16]};
+                endcase
+            end
+            
             default: wb_load_data = mem_wb_rdata;
         endcase
     end
     
     // Final Write Back Mux
-    // For JAL/JALR (control instructions that write back), write PC+4
+    // For JAL/JALR, stage_ex already computed PC+4 and stored it in alu_result
     // For loads, write memory data
     // For ALU ops, write ALU result
-    assign wb_write_data = mem_wb_ctrl_mem_read ? wb_load_data : 
-                           (mem_wb_ctrl_is_control && mem_wb_ctrl_wb_en) ? (mem_wb_pc + 4) :
-                           mem_wb_alu_result;
+    assign wb_write_data = mem_wb_ctrl_mem_read ? wb_load_data : mem_wb_alu_result;
 
     // ========================================================================
     // HALT Detection (Section 1.9, 9.5.5)
@@ -536,7 +575,7 @@ module pipelined (
     
     // PC outputs
     assign o_pc_frontend = if_pc;        // IF stage PC (Section 5.5.1)
-    assign o_pc_commit = mem_wb_pc;      // WB commit PC (Section 9.5.1)
+    assign o_pc_debug = mem_wb_pc;      // WB commit PC (Section 9.5.1)
     
     // Commit interface
     assign o_insn_vld = mem_wb_ctrl_valid && !mem_wb_ctrl_bubble && !r_halt;
@@ -564,6 +603,8 @@ module pipelined (
     initial commit_count = 0;
     initial cycle_count = 0;
     
+    // Debug: Removed for clean output
+    
     always @(posedge i_clk) begin
       if (!i_reset) begin
         commit_count <= 0;
@@ -572,10 +613,6 @@ module pipelined (
         cycle_count <= cycle_count + 1;
         if (o_insn_vld) begin
           commit_count <= commit_count + 1;
-          // Debug: Show when we reach the critical load instruction
-          if (mem_wb_pc == 32'h254) begin
-            $display("[PC=0x254] wb_write_data=0x%h mem_read=%b wb_en=%b", wb_write_data, mem_wb_ctrl_mem_read, mem_wb_ctrl_wb_en);
-          end
         end
       end
     end

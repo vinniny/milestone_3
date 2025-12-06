@@ -7,6 +7,7 @@ module stage_ex (
     input  logic [3:0]  i_alu_op,
     input  logic [1:0]  i_op_a_sel,
     input  logic        i_op_b_sel,
+    input  logic        i_is_jump,      // Jump instruction (JAL/JALR)
 
     // Forwarding Inputs
     input  logic [1:0]  i_forward_a_sel, // 00:RF, 01:WB, 10:EX/MEM
@@ -23,6 +24,7 @@ module stage_ex (
     logic [31:0] rs2_fwd;
     logic [31:0] op_a;
     logic [31:0] op_b;
+    logic [31:0] alu_result_raw;  // Raw ALU output before jump correction
 
     // Forwarding Muxes
     always @(*) begin
@@ -63,13 +65,19 @@ module stage_ex (
         endcase
     end
 
-    // ALU
+    // ALU - computes target address for jumps, but we'll override for link register
     alu ex_alu (
         .i_op_a(op_a),
         .i_op_b(op_b),
         .i_alu_op(i_alu_op),
-        .o_alu_data(o_alu_result)
+        .o_alu_data(alu_result_raw)
     );
+
+    // CRITICAL FIX: For JAL/JALR, the value written to rd is PC+4 (return address),
+    // NOT the jump target address. This is essential for forwarding to work correctly.
+    // Without this, if the next instruction uses the link register, it gets the
+    // target address instead of the return address, causing infinite loops.
+    assign o_alu_result = i_is_jump ? (i_pc + 32'd4) : alu_result_raw;
 
     // Store Data (Forwarded rs2)
     assign o_store_data = rs2_fwd;

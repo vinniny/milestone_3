@@ -14,12 +14,12 @@ module input_mux (
 );
 
   // Memory-mapped address ranges per spec:
-  // - DMEM: 0x0000_0000 to 0x0000_07FF (2 KiB)
+  // - DMEM: 0x0000_0000 to 0x0000_7FFF (32 KiB) - expanded to include stack at 0x7000
   // - I/O:  0x1000_xxxx (output devices) and 0x1001_xxxx (input devices)
   //   Where xxxx can be any value (full 16-bit range for device addresses)
 
-  // DMEM valid when address[31:11] == 0 (first 2 KiB)
-  assign f_dmem_valid = (i_lsu_addr[31:11] == 21'd0);
+  // DMEM valid when address[31:15] == 0 (first 32 KiB, includes 0x7000)
+  assign f_dmem_valid = (i_lsu_addr[31:15] == 17'd0);
 
   // I/O valid when address matches upper 16 bits: 0x1000 or 0x1001
   assign f_io_valid = (i_lsu_addr[31:16] == 16'h1000) ||

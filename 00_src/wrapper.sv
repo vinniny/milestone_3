@@ -35,7 +35,7 @@ module wrapper (
     logic        unused_ctrl;
     logic        unused_mispred;
     logic [31:0] unused_pc_frontend;
-    logic [31:0] unused_pc_commit;
+    logic [31:0] unused_pc_debug;
     logic        unused_halt;
     logic [3:0]  unused_model_id;
 
@@ -51,7 +51,7 @@ module wrapper (
 
         // Debug/commit interface (unused on board)
         .o_pc_frontend (unused_pc_frontend),
-        .o_pc_commit   (unused_pc_commit),
+        .o_pc_debug   (unused_pc_debug),
         .o_insn_vld    (insn_vld),
         .o_ctrl        (unused_ctrl),
         .o_mispred     (unused_mispred),

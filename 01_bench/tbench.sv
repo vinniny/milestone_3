@@ -35,7 +35,7 @@ module tbench;
   end
 
   logic [31:0]  pc_frontend;
-  logic [31:0]  pc_commit;
+  logic [31:0]  pc_debug;
   logic [31:0]  io_sw  ;
   logic [31:0]  io_lcd ;
   logic [31:0]  io_ledr;
@@ -75,7 +75,7 @@ module tbench;
     .o_ctrl    (ctrl     ),
     .o_mispred (mispred  ),
     .o_pc_frontend(pc_frontend),
-    .o_pc_commit(pc_commit),
+    .o_pc_debug(pc_debug),
     .o_insn_vld(insn_vld ),
     .o_halt(halt),
     .o_model_id(model_id)
@@ -107,7 +107,7 @@ module tbench;
     // Debug
     .o_ctrl    (ctrl     ),
     .o_mispred (mispred  ),
-    .o_pc_debug(pc_commit),
+    .o_pc_debug(pc_debug),
     .o_insn_vld(insn_vld )
   );
 

@@ -18,6 +18,9 @@ module hazard_unit (
     // EX/MEM Stage Inputs
     input  logic [4:0]  i_ex_mem_rd,
     input  logic        i_ex_mem_mem_read,
+    
+    // MEM Stage Inputs
+    input  logic        i_mem_stall_req,  // Misaligned access stall request
 
     // Outputs
     output logic        o_stall_if,
@@ -77,7 +80,7 @@ module hazard_unit (
         end
     end
 
-    assign stall = stall_load_use | stall_branch_load | stall_branch_alu;
+    assign stall = stall_load_use | stall_branch_load | stall_branch_alu | i_mem_stall_req;
 
     assign o_stall_if     = stall;
     assign o_stall_id     = stall;
