@@ -1,0 +1,59 @@
+WARNING: ./../00_src/i_mem.sv:29: $readmemh(../02_test/isa_4b.hex): Not enough words in the file for the requested range [0:16383].
+
+PIPELINE - ISA tests
+
+VCD info: dumpfile dump.vcd opened for output.
+WARNING: ./../00_src/i_mem.sv:29: $readmemh(../02_test/isa_4b.hex): Not enough words in the file for the requested range [0:16383].
+add......PASS
+addi.....PASS
+sub......PASS
+and......PASS
+andi.....PASS
+or.......PASS
+ori......PASS
+xor......PASS
+xori.....PASS
+slt......PASS
+slti.....PASS
+sltu.....PASS
+sltiu....PASS
+sll......PASS
+slli.....PASS
+srl......PASS
+srli.....PASS
+sra......PASS
+srai.....PASS
+lw.......PASS
+lh.......ERROR
+lhu......ERROR
+lb.......ERROR
+lbu......ERROR
+sw.......PASS
+sh.......PASS
+sb.......PASS
+auipc....PASS
+lui......PASS
+beq......PASS
+bne......PASS
+blt......PASS
+bltu.....PASS
+bge......PASS
+bgeu.....PASS
+jal......PASS
+jalr.....PASS
+malgn....ERROR
+iosw.....ERROR
+
+=================== Result ===================
+Total Clock Cycles Executed = 6626
+Total Instructions Executed = 4833
+Total Branch Instructions   = 1606
+Total Branch Mispredictions = 52
+
+----------------------------------------------
+Instruction Per Cycle (IPC) = 0.73
+Branch Misprediction Rate   = 3.24 %
+
+END of ISA tests
+
+./../01_bench/scoreboard.sv:85: $finish called at 26556 (1s)
