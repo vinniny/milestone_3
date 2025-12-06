@@ -24,10 +24,10 @@ srli.....PASS
 sra......PASS
 srai.....PASS
 lw.......PASS
-lh.......ERROR
-lhu......ERROR
-lb.......ERROR
-lbu......ERROR
+lh.......PASS
+lhu......PASS
+lb.......PASS
+lbu......PASS
 sw.......PASS
 sh.......PASS
 sb.......PASS
@@ -42,18 +42,18 @@ bgeu.....PASS
 jal......PASS
 jalr.....PASS
 malgn....ERROR
-iosw.....ERROR
+iosw.....PASS
 
 =================== Result ===================
-Total Clock Cycles Executed = 6626
-Total Instructions Executed = 4833
-Total Branch Instructions   = 1606
-Total Branch Mispredictions = 52
+Total Clock Cycles Executed = 6625
+Total Instructions Executed = 4831
+Total Branch Instructions   = 1604
+Total Branch Mispredictions = 47
 
 ----------------------------------------------
 Instruction Per Cycle (IPC) = 0.73
-Branch Misprediction Rate   = 3.24 %
+Branch Misprediction Rate   = 2.93 %
 
 END of ISA tests
 
-./../01_bench/scoreboard.sv:85: $finish called at 26556 (1s)
+./../01_bench/scoreboard.sv:85: $finish called at 26552 (1s)
