@@ -1,3 +1,0 @@
-read_verilog -sv -formal -overwrite {workspace}/00_src/forwarding_unit.sv
-design -reset-vlog; proc;
-write_json {workspace}/netlist/forwarding_unit.json

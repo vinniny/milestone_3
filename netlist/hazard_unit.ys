@@ -1,3 +1,0 @@
-read_verilog -sv -formal -overwrite {workspace}/00_src/hazard_unit.sv
-design -reset-vlog; proc;
-write_json {workspace}/netlist/hazard_unit.json
