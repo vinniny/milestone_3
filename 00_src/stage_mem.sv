@@ -3,14 +3,14 @@ module stage_mem (
     input  logic        i_reset,
     
     // Inputs from EX/MEM
-    input  logic [31:0] i_alu_result, // Address
+    input  logic [31:0] i_alu_result,
     input  logic [31:0] i_store_data,
     input  logic        i_mem_write,
     input  logic        i_mem_read,
     input  logic [2:0]  i_funct3,
-    input  logic        i_ctrl_kill,  // Kill signal for flushed instructions
-    input  logic        i_ctrl_valid, // Valid signal (not a bubble)
-    input  logic        i_ctrl_bubble, // Bubble signal
+    input  logic        i_ctrl_kill,
+    input  logic        i_ctrl_valid,
+    input  logic        i_ctrl_bubble,
     
     // I/O Inputs
     input  logic [31:0] i_io_sw,
@@ -28,317 +28,80 @@ module stage_mem (
     output logic [6:0]  o_io_hex7,
     output logic [31:0] o_io_lcd,
     
-    // Outputs to MEM/WB
-    output logic [31:0] o_dmem_rdata, // From DMEM (sync)
-    output logic [31:0] o_io_rdata,   // From I/O (registered)
+    // Outputs to MEM/WB (pipelined.sv expects these names)
+    output logic [31:0] o_dmem_rdata,
+    output logic [31:0] o_io_rdata,
     
-    // Stall request for misaligned access
+    // Output to hazard unit
     output logic        o_mem_stall_req
 );
 
-    // State machine for misaligned access
-    typedef enum logic [1:0] {
-        IDLE,
-        ACCESS_2_READ,
-        ACCESS_2_WRITE
-    } state_t;
+    // Internal signal for combined load data from LSU
+    logic [31:0] ld_data;
     
-    state_t state, next_state;
+    // For synchronous DMEM: We need to stall loads for 1 cycle to allow data to arrive
+    // But we must only stall ONCE per load, not forever!
+    // Solution: Stall when mem_read is TRUE and we haven't stalled yet for this instruction
+    //
+    // The tricky part: how do we know if we've already stalled?
+    // Answer: If we're stalling (o_mem_stall_req=1), the instruction stays in MEM stage.
+    //         Next cycle, we clear the stall (o_mem_stall_req=0), allowing it to proceed.
+    //         We use a register to track "did we stall last cycle?"
     
-    // Internal Signals
-    logic f_dmem_valid, f_io_valid;
-    logic f_dmem_wren;
-    logic f_dmem_valid_current, f_io_valid_unused, f_dmem_wren_unused;
-    logic [3:0] dmem_byte_enable;
-    logic [31:0] dmem_write_data;
-    logic [31:0] dmem_address;
-    logic [31:0] dmem_read_data;
-    logic misaligned_access;
-    logic lsu_store_en; // Strict gating: valid & ~bubble & ~kill & mem_write
+    logic r_stalled_last_cycle;
     
-    logic [31:0] b_io_ledr, b_io_ledg, b_io_hexl, b_io_hexh, b_io_lcd, b_io_sw;
-    logic [31:0] io_rdata_comb;
-    
-    // Misaligned access buffers
-    logic [31:0] first_word_buffer;
-    logic [31:0] saved_alu_result;
-    logic [31:0] saved_store_data;
-    logic [2:0]  saved_funct3;
-    logic [1:0]  saved_offset;  // Original misalignment offset
-    logic        saved_mem_write;
-
-    // LSU Store Enable - Strict Gating
-    // Only allow stores from valid, non-bubble, non-killed instructions
-    assign lsu_store_en = i_ctrl_valid && !i_ctrl_bubble && !i_ctrl_kill && i_mem_write;
-
-    // Address Decode (Input Mux) - use current or saved address
-    logic [31:0] effective_address;
-    assign effective_address = (state == IDLE) ? i_alu_result : saved_alu_result;
-    
-    input_mux u_mux (
-        .i_lsu_addr(effective_address),
-        .i_lsu_wren(i_mem_write || saved_mem_write), 
-        .f_dmem_valid(f_dmem_valid),
-        .f_io_valid(f_io_valid),
-        .f_dmem_wren(f_dmem_wren)
-    );
-    
-    // Check if current instruction's address is in DMEM range (for misalignment detection)
-    input_mux u_mux_check (
-        .i_lsu_addr(i_alu_result),
-        .i_lsu_wren(i_mem_write), 
-        .f_dmem_valid(f_dmem_valid_current),
-        .f_io_valid(f_io_valid_unused),
-        .f_dmem_wren(f_dmem_wren_unused)
-    );
-
-    // Misalignment Detection - only for word and halfword accesses on DMEM in IDLE state
-    always @(*) begin
-        misaligned_access = 1'b0;
-        if (state == IDLE && f_dmem_valid_current) begin
-            case (i_funct3)
-                3'b001, 3'b101: misaligned_access = i_alu_result[0];        // SH/LH
-                3'b010:         misaligned_access = |i_alu_result[1:0];     // SW/LW
-                default:        misaligned_access = 1'b0;
-            endcase
-        end
-    end
-    
-    // State Machine for Misaligned Access
     always_ff @(posedge i_clk) begin
         if (!i_reset) begin
-            state <= IDLE;
+            r_stalled_last_cycle <= 1'b0;
         end else begin
-            state <= next_state;
+            r_stalled_last_cycle <= o_mem_stall_req;
         end
     end
     
-    always_comb begin
-        next_state = state;
-        o_mem_stall_req = 1'b0;
-        
-        case (state)
-            IDLE: begin
-                // Only transition if it's a valid memory operation with misalignment
-                if (i_ctrl_valid && !i_ctrl_bubble && !i_ctrl_kill && 
-                    misaligned_access && (i_mem_read || i_mem_write)) begin
-                    o_mem_stall_req = 1'b1; // Stall pipeline
-                    if (i_mem_read) begin
-                        next_state = ACCESS_2_READ;
-                    end else if (i_mem_write) begin
-                        next_state = ACCESS_2_WRITE;
-                    end
-                end
-            end
-            
-            ACCESS_2_READ: begin
-                o_mem_stall_req = 1'b0; // Release stall
-                next_state = IDLE;
-            end
-            
-            ACCESS_2_WRITE: begin
-                o_mem_stall_req = 1'b0; // Release stall
-                next_state = IDLE;
-            end
-            
-            default: begin
-                next_state = IDLE;
-                o_mem_stall_req = 1'b0;
-            end
-        endcase
-    end
-    
-    // Save first access data and control signals
-    always_ff @(posedge i_clk) begin
-        // Capture first word data at end of first cycle (when transitioning out of IDLE)
-        if (state == IDLE && (next_state == ACCESS_2_READ || next_state == ACCESS_2_WRITE)) begin
-            first_word_buffer <= dmem_read_data;
-            saved_alu_result  <= {i_alu_result[31:2] + 30'd1, 2'b00}; // Next aligned word
-            saved_store_data  <= i_store_data;
-            saved_funct3      <= i_funct3;
-            saved_offset      <= i_alu_result[1:0];  // Save original offset
-            saved_mem_write   <= i_mem_write;
-        end
-    end
-    
-    // Address for DMEM: use aligned address in second access
-    assign dmem_address = (state == ACCESS_2_READ || state == ACCESS_2_WRITE) ? 
-                          {saved_alu_result[31:2], 2'b00} : {i_alu_result[31:2], 2'b00};
+    // Stall if: it's a valid load AND we didn't stall last cycle
+    assign o_mem_stall_req = i_mem_read && i_ctrl_valid && !i_ctrl_bubble && !i_ctrl_kill && !r_stalled_last_cycle;
 
-    // Store Data Prep - handle both aligned and misaligned
-    always @(*) begin
-        dmem_byte_enable = 4'b0000;
-        dmem_write_data = i_store_data;
-        
-        // Normal aligned access in IDLE state
-        if (lsu_store_en && f_dmem_wren && !misaligned_access && state == IDLE) begin
-            case (i_funct3)
-                3'b000: begin // SB
-                    case (i_alu_result[1:0])
-                        2'b00: dmem_byte_enable = 4'b0001;
-                        2'b01: dmem_byte_enable = 4'b0010;
-                        2'b10: dmem_byte_enable = 4'b0100;
-                        2'b11: dmem_byte_enable = 4'b1000;
-                    endcase
-                    dmem_write_data = {4{i_store_data[7:0]}};
-                end
-                3'b001: begin // SH
-                    if (!i_alu_result[0]) begin
-                        case (i_alu_result[1])
-                            1'b0: dmem_byte_enable = 4'b0011;
-                            1'b1: dmem_byte_enable = 4'b1100;
-                        endcase
-                        dmem_write_data = {2{i_store_data[15:0]}};
-                    end
-                end
-                3'b010: begin // SW
-                    if (i_alu_result[1:0] == 2'b00) begin
-                        dmem_byte_enable = 4'b1111;
-                        dmem_write_data = i_store_data;
-                    end
-                end
-                default: dmem_byte_enable = 4'b0000;
-            endcase
-        end
-        
-        // Misaligned SW - first access (partial write to first word)
-        // This happens while still in IDLE, before transitioning
-        else if (state == IDLE && misaligned_access && i_mem_write && i_ctrl_valid && i_funct3 == 3'b010) begin
-            case (i_alu_result[1:0])
-                2'b01: begin // Write upper 3 bytes of first word
-                    dmem_byte_enable = 4'b1110;
-                    dmem_write_data = {i_store_data[23:0], 8'h00};
-                end
-                2'b10: begin // Write upper 2 bytes of first word
-                    dmem_byte_enable = 4'b1100;
-                    dmem_write_data = {i_store_data[15:0], 16'h0000};
-                end
-                2'b11: begin // Write upper 1 byte of first word
-                    dmem_byte_enable = 4'b1000;
-                    dmem_write_data = {i_store_data[7:0], 24'h000000};
-                end
-                default: dmem_byte_enable = 4'b0000;
-            endcase
-        end
-        
-        // Misaligned SW - second access (write remaining bytes to second word)
-        else if (state == ACCESS_2_WRITE && saved_funct3 == 3'b010) begin
-            case (saved_offset)
-                2'b01: begin // Write lower 1 byte of second word
-                    dmem_byte_enable = 4'b0001;
-                    dmem_write_data = {24'h000000, saved_store_data[31:24]};
-                end
-                2'b10: begin // Write lower 2 bytes of second word
-                    dmem_byte_enable = 4'b0011;
-                    dmem_write_data = {16'h0000, saved_store_data[31:16]};
-                end
-                2'b11: begin // Write lower 3 bytes of second word
-                    dmem_byte_enable = 4'b0111;
-                    dmem_write_data = {8'h00, saved_store_data[31:8]};
-                end
-                default: dmem_byte_enable = 4'b0000;
-            endcase
+`ifndef SYNTHESIS
+    integer load_count = 0;
+    always @(posedge i_clk) begin
+        if (o_mem_stall_req) begin
+            load_count = load_count + 1;
+            if (load_count <= 5) begin
+                $display("T=%0t [LOAD_%0d] mem_read=%b stall_req=%b", $time, load_count, i_mem_read, o_mem_stall_req);
+            end
         end
     end
-
-    // DMEM
-    dmem dmem_inst (
+`endif
+    
+    // LSU outputs combined dmem/io data - split it for backward compatibility
+    // pipelined.sv will mux them based on address
+    assign o_dmem_rdata = ld_data;
+    assign o_io_rdata   = ld_data;
+    
+    // Instantiate LSU (handles all memory, I/O, and misaligned access)
+    lsu u_lsu(
         .i_clk(i_clk),
         .i_reset(i_reset),
-        .address(dmem_address[15:0]),
-        .data(dmem_write_data),
-        .wren(dmem_byte_enable),
-        .q(dmem_read_data)
-    );
-    
-    // Merge data for misaligned loads
-    always @(*) begin
-        if (state == ACCESS_2_READ && saved_funct3 == 3'b010) begin
-            // Merge first_word_buffer and current dmem_read_data based on original offset
-            case (saved_offset)
-                2'b01: o_dmem_rdata = {dmem_read_data[7:0], first_word_buffer[31:8]};
-                2'b10: o_dmem_rdata = {dmem_read_data[15:0], first_word_buffer[31:16]};
-                2'b11: o_dmem_rdata = {dmem_read_data[23:0], first_word_buffer[31:24]};
-                default: o_dmem_rdata = dmem_read_data;
-            endcase
-        end else begin
-            o_dmem_rdata = dmem_read_data;
-        end
-    end
-
-    // Input Buffer
-    input_buffer u_in_buf (
-        .i_clk(i_clk),
-        .i_reset(i_reset),
-        .i_io_sw(i_io_sw),
-        .b_io_sw(b_io_sw)
-    );
-
-    // Output Buffer
-    output_buffer u_out_buf (
-        .i_clk(i_clk),
-        .i_reset(i_reset),
-        .i_st_data(i_store_data),
-        .i_io_addr(i_alu_result),
         .i_funct3(i_funct3),
-        .i_mem_write(i_mem_write),
-        .i_io_valid(f_io_valid),
+        .i_lsu_addr(i_alu_result),
+        .i_st_data(i_store_data),
+        .i_lsu_wren(i_mem_write),
+        .o_ld_data(ld_data),
         .i_ctrl_kill(i_ctrl_kill),
         .i_ctrl_valid(i_ctrl_valid),
         .i_ctrl_bubble(i_ctrl_bubble),
-        .b_io_ledr(b_io_ledr),
-        .b_io_ledg(b_io_ledg),
-        .b_io_hexl(b_io_hexl),
-        .b_io_hexh(b_io_hexh),
-        .b_io_lcd(b_io_lcd)
+        .o_io_ledr(o_io_ledr),
+        .o_io_ledg(o_io_ledg),
+        .o_io_hex0(o_io_hex0),
+        .o_io_hex1(o_io_hex1),
+        .o_io_hex2(o_io_hex2),
+        .o_io_hex3(o_io_hex3),
+        .o_io_hex4(o_io_hex4),
+        .o_io_hex5(o_io_hex5),
+        .o_io_hex6(o_io_hex6),
+        .o_io_hex7(o_io_hex7),
+        .o_io_lcd(o_io_lcd),
+        .i_io_sw(i_io_sw)
     );
-
-    // I/O Read Mux
-    always @(*) begin
-        io_rdata_comb = 32'd0;
-        if (f_io_valid) begin
-            if (i_alu_result[31:16] == 16'h1001) begin
-                io_rdata_comb = b_io_sw;
-            end else begin
-                case (i_alu_result[15:12])
-                    4'h0: io_rdata_comb = b_io_ledr;
-                    4'h1: io_rdata_comb = b_io_ledg;
-                    4'h2: io_rdata_comb = b_io_hexl;
-                    4'h3: io_rdata_comb = b_io_hexh;
-                    4'h4: io_rdata_comb = b_io_lcd;
-                    default: io_rdata_comb = 32'd0;
-                endcase
-            end
-        end
-    end
-
-    // Register I/O Read Data
-    always @(posedge i_clk) begin
-        if (!i_reset) begin  // Active-low reset
-            o_io_rdata <= 32'b0;
-        end else begin
-            o_io_rdata <= io_rdata_comb;
-        end
-    end
-
-    // I/O Output Routing
-    assign o_io_ledr = b_io_ledr;
-    assign o_io_ledg = b_io_ledg;
-    assign o_io_lcd  = b_io_lcd;
-    
-`ifndef SYNTHESIS
-    // Debug: Monitor b_io_ledr register
-    always @(posedge i_clk) begin
-
-    end
-`endif
-    assign o_io_hex0 = b_io_hexl[ 6: 0];
-    assign o_io_hex1 = b_io_hexl[14: 8];
-    assign o_io_hex2 = b_io_hexl[22:16];
-    assign o_io_hex3 = b_io_hexl[30:24];
-    assign o_io_hex4 = b_io_hexh[ 6: 0];
-    assign o_io_hex5 = b_io_hexh[14: 8];
-    assign o_io_hex6 = b_io_hexh[22:16];
-    assign o_io_hex7 = b_io_hexh[30:24];
 
 endmodule

@@ -1,14 +1,14 @@
 // ============================================================================
 // Module: i_mem
-// Description: Instruction Memory (IMEM) - 2 KiB word-addressed ROM
-//              Asynchronous read, preloaded from hex file
-//              For FPGA: Uses $readmemh with synthesis attributes
-//              For Quartus: Memory Initialization File (.mif) or .hex
+// Description: Instruction Memory (IMEM) - 64 KiB Synchronous ROM
+//              **SYNCHRONOUS READ** for M10K Block RAM inference
+//              Preloaded from hex file via $readmemh
+//              1-cycle read latency (compensated by pre-fetch in stage_if)
 // ============================================================================
 module i_mem (
   input  logic        i_clk,
   input  logic [31:0] i_addr,              // Byte address input
-  output logic [31:0] o_data               // 32-bit instruction output
+  output logic [31:0] o_data               // 32-bit instruction output (REGISTERED)
 );
 
   // Memory array with FPGA BRAM synthesis attributes
@@ -29,8 +29,15 @@ module i_mem (
     $readmemh("../02_test/isa_4b.hex", mem);
   end
 
-  // Asynchronous read: convert byte address to word address
-  assign o_data = mem[i_addr[15:2]];  // Drop lower 2 bits for word alignment
+  // ===========================================================================
+  // SYNCHRONOUS READ: Infers M10K Block RAM
+  // ===========================================================================
+  // Read has 1-cycle latency. Address at cycle N produces data at cycle N+1.
+  // stage_if uses pre-fetch (pc_next) to compensate for this latency.
+  // if_id_reg uses standard flip-flops to break combinational loops.
+  always_ff @(posedge i_clk) begin
+    o_data <= mem[i_addr[15:2]];  // Convert byte address to word address
+  end
 
 endmodule
 

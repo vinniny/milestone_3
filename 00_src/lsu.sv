@@ -2,36 +2,23 @@
 // Module: lsu (Load-Store Unit)
 //==============================================================================
 // Description:
-//   Top-level load-store unit for the RISC-V single-cycle processor.
-//   Handles all memory and I/O access operations including:
-//     - Load/store byte/halfword/word operations (LB, LH, LW, LBU, LHU, SB, SH, SW)
-//     - Sign/zero extension for loads
-//     - Byte-enable generation for partial writes
-//     - Misalignment detection and blocking
+//   Load-store unit with **DUAL-PORT SYNCHRONOUS DMEM** for single-cycle
+//   misaligned access support using funnel shifter architecture.
+//
+//   Key Features:
+//     - Dual-port RAM allows reading/writing 2 consecutive words simultaneously
+//     - Misaligned loads handled in 1 cycle via funnel shifter (no FSM)
+//     - Misaligned stores split across Port A and Port B byte enables
 //     - Memory-mapped I/O for LEDs, 7-segment displays, LCD, and switches
-//     - Address decoding between DMEM and I/O regions
 //
 // Memory Map:
-//   0x0000_0000 - 0x0000_07FF: Data memory (2 KiB)
+//   0x0000_0000 - 0x0000_FFFF: Data memory (64 KiB)
 //   0x1000_0000 - 0x1000_0FFF: Red LEDs (LEDR)
 //   0x1000_1000 - 0x1000_1FFF: Green LEDs (LEDG)
 //   0x1000_2000 - 0x1000_2FFF: 7-segment displays (low 4 digits, HEX0-3)
 //   0x1000_3000 - 0x1000_3FFF: 7-segment displays (high 4 digits, HEX4-7)
 //   0x1000_4000 - 0x1000_4FFF: LCD display
 //   0x1001_0000 - 0x1001_0FFF: Switch inputs
-//
-// Alignment Rules:
-//   - SB/LB:  No alignment required (any address)
-//   - SH/LH:  Half-word aligned (addr[0] == 0)
-//   - SW/LW:  Word aligned (addr[1:0] == 00)
-//   - Misaligned accesses return zero for loads, are blocked for stores
-//
-// Sub-modules:
-//   - dmem:         2 KiB data memory with per-byte write enables
-//   - input_mux:    Address decoder (DMEM vs I/O regions)
-//   - output_mux:   Load data multiplexer (selects between DMEM and I/O)
-//   - input_buffer: Input synchronization for switches
-//   - output_buffer: Memory-mapped I/O write handler for LEDs/displays
 //==============================================================================
 
 module lsu(
@@ -68,243 +55,312 @@ module lsu(
   input  logic [31:0] i_io_sw      // Switch inputs
 );
 
-  // Memory-mapped I/O address definitions (bits [15:12] for 4KB blocks)
-  /* verilator lint_off UNUSEDPARAM */
-  localparam LEDR = 4'h0;  // Red LEDs at 0x1000_0xxx
-  localparam LEDG = 4'h1;  // Green LEDs at 0x1000_1xxx
-  localparam HEXL = 4'h2;  // 7-segment low (digits 0-3) at 0x1000_2xxx
-  localparam HEXH = 4'h3;  // 7-segment high (digits 4-7) at 0x1000_3xxx
-  localparam LCD  = 4'h4;  // LCD display at 0x1000_4xxx
-  localparam SW   = 4'h0;  // Switch inputs at 0x1001_0xxx (note: different upper 16 bits)
-  /* verilator lint_on UNUSEDPARAM */
-
-  // Internal signals for memory and I/O data paths
-  /* verilator lint_off UNUSEDSIGNAL */
-  logic [31:0] b_dmem_data;    // Data read from DMEM
-  /* verilator lint_on UNUSEDSIGNAL */
-  logic [31:0] b_io_ledr;      // Buffered red LED data
-  logic [31:0] b_io_ledg;      // Buffered green LED data
-  logic [31:0] b_io_hexl;      // Buffered 7-seg low data
-  logic [31:0] b_io_hexh;      // Buffered 7-seg high data
-  logic [31:0] b_io_lcd;       // Buffered LCD data
-  logic [31:0] b_io_sw;        // Synchronized switch inputs
-  /* verilator lint_off UNDRIVEN */
-  logic [31:0] b_io_btn;       // Buffered button data (unused)
-  /* verilator lint_on UNDRIVEN */
+  //============================================================================
+  // Internal Signals
+  //============================================================================
   
   // Address decode flags
-  logic        f_dmem_valid;   // Address in DMEM range (0x0000_0000 - 0x0000_07FF)
-  logic        f_io_valid;     // Address in I/O range (0x1000_xxxx or 0x1001_xxxx)
-  logic        f_dmem_wren;    // Write enable for DMEM (= i_lsu_wren && f_dmem_valid)
+  logic        f_dmem_valid;   // Address in DMEM range
+  logic        f_io_valid;     // Address in I/O range
+  logic        f_dmem_wren;    // Write enable for DMEM
   
-  // DMEM interface signals
-  logic [3:0]  dmem_byte_enable;      // Per-byte write enables [3:0] for DMEM
-  logic [31:0] dmem_write_data;       // Write data to DMEM (replicated bytes/halfwords)
-  logic [31:0] dmem_read_data;        // Raw read data from DMEM
-  logic [31:0] processed_read_data;   // Load data after sign/zero extension and lane selection
-  logic        misaligned_access;     // Flag for misaligned load/store
+  // DMEM dual-port interface
+  logic [15:0] dmem_addr_a, dmem_addr_b;
+  logic [31:0] dmem_data_a, dmem_data_b;
+  logic [3:0]  dmem_wren_a, dmem_wren_b;
+  logic [31:0] dmem_q_a, dmem_q_b;
+  
+  // I/O buffers
+  logic [31:0] b_io_ledr, b_io_ledg, b_io_hexl, b_io_hexh, b_io_lcd, b_io_sw;
+  logic [31:0] b_io_btn;  // Unused
+  
+  // Load data processing
+  logic [31:0] dmem_load_data;      // Processed load data from DMEM
+  logic [31:0] processed_read_data; // Final load data after I/O mux
   
   //============================================================================
-  // Misalignment Detection
+  // PIPELINED LOAD PATH: Register Control Signals for Synchronous DMEM
   //============================================================================
-  // Check if the access violates alignment rules:
-  //   - SB/LB (funct3=000/100): Never misaligned
-  //   - SH/LH (funct3=001/101): Misaligned if addr[0] != 0
-  //   - SW/LW (funct3=010):     Misaligned if addr[1:0] != 00
-
-  always @(*) begin
-    misaligned_access = 1'b0;
-    case (i_funct3)
-      3'b001, 3'b101: misaligned_access = i_lsu_addr[0];        // SH/LH: misaligned if addr[0] != 0
-      3'b010:         misaligned_access = |i_lsu_addr[1:0];     // SW/LW: misaligned if addr[1:0] != 00
-      default:        misaligned_access = 1'b0;                 // SB/LB: never misaligned
-    endcase
+  // Synchronous DMEM has 1-cycle read latency. When a load instruction is in
+  // MEM stage (cycle N), DMEM is addressed but data arrives in cycle N+1.
+  // By cycle N+1, the NEXT instruction is in MEM stage, so current i_funct3
+  // and i_lsu_addr are for the WRONG instruction!
+  // Solution: Register offset and funct3 when load is issued (cycle N),
+  // use registered versions when data arrives (cycle N+1).
+  
+  logic [1:0]  r_offset;      // Registered byte offset
+  logic [2:0]  r_funct3;      // Registered load type
+  logic        is_load;        // Current instruction is a load
+  
+  assign is_load = !i_lsu_wren && i_ctrl_valid && !i_ctrl_bubble && !i_ctrl_kill;
+  
+  always_ff @(posedge i_clk) begin
+    if (!i_reset) begin
+      r_offset <= 2'b00;
+      r_funct3 <= 3'b000;
+    end else if (is_load) begin
+      // Load operation: capture control signals for use next cycle
+      r_offset <= i_lsu_addr[1:0];
+      r_funct3 <= i_funct3;
+    end
   end
   
   //============================================================================
-  // Store Data Preparation
+  // DUAL-PORT ADDRESS GENERATION
   //============================================================================
-  // Generate byte enable signals and replicate store data to appropriate lanes.
-  // For SB: Replicate byte to all 4 lanes, enable only target lane
-  // For SH: Replicate halfword to both positions, enable target halfword
-  // For SW: Pass through word unchanged, enable all lanes
-  // Misaligned stores are blocked (all enables = 0)
+  // Port A: Word-aligned base address (i_addr[31:2] << 2)
+  // Port B: Next consecutive word (i_addr[31:2] + 1) << 2
+  // This allows reading/writing two consecutive words for misaligned access
   
-  always @(*) begin
-    dmem_byte_enable = 4'b0000;
-    dmem_write_data = i_st_data;
+  assign dmem_addr_a = {i_lsu_addr[15:2], 2'b00};           // Base word
+  assign dmem_addr_b = {i_lsu_addr[15:2] + 14'd1, 2'b00};  // Next word
+  
+  //============================================================================
+  // STORE LOGIC: Byte Enable Generation for Dual Ports
+  //============================================================================
+  // Split store data across Port A and Port B based on alignment offset.
+  // Handle SB, SH, SW for all offset cases (0, 1, 2, 3).
+  
+  logic [1:0] offset;
+  assign offset = i_lsu_addr[1:0];
+  
+  always_comb begin
+    // Default: No writes
+    dmem_wren_a = 4'b0000;
+    dmem_wren_b = 4'b0000;
+    dmem_data_a = 32'h0;
+    dmem_data_b = 32'h0;
     
-    if (f_dmem_wren && !misaligned_access) begin  // Only generate enables if writing to DMEM and aligned
+    if (f_dmem_wren) begin  // Write to DMEM only
       case (i_funct3)
-        3'b000: begin // SB - Store byte
-          case (i_lsu_addr[1:0])
-            2'b00: dmem_byte_enable = 4'b0001;  // Byte 0 (bits [7:0])
-            2'b01: dmem_byte_enable = 4'b0010;  // Byte 1 (bits [15:8])
-            2'b10: dmem_byte_enable = 4'b0100;  // Byte 2 (bits [23:16])
-            2'b11: dmem_byte_enable = 4'b1000;  // Byte 3 (bits [31:24])
+        // =====================================================
+        // SB - Store Byte (can be at any offset 0,1,2,3)
+        // =====================================================
+        3'b000: begin
+          case (offset)
+            2'b00: begin  // Byte at offset 0 -> Port A[7:0]
+              dmem_wren_a = 4'b0001;
+              dmem_data_a = {24'h0, i_st_data[7:0]};
+            end
+            2'b01: begin  // Byte at offset 1 -> Port A[15:8]
+              dmem_wren_a = 4'b0010;
+              dmem_data_a = {16'h0, i_st_data[7:0], 8'h0};
+            end
+            2'b10: begin  // Byte at offset 2 -> Port A[23:16]
+              dmem_wren_a = 4'b0100;
+              dmem_data_a = {8'h0, i_st_data[7:0], 16'h0};
+            end
+            2'b11: begin  // Byte at offset 3 -> Port A[31:24]
+              dmem_wren_a = 4'b1000;
+              dmem_data_a = {i_st_data[7:0], 24'h0};
+            end
           endcase
-          // Replicate byte to all 4 positions
-          dmem_write_data = {4{i_st_data[7:0]}};
         end
-
-        3'b001: begin // SH - Store halfword (must be 2-byte aligned)
-          if (!i_lsu_addr[0]) begin  // Only if addr[0] == 0
-            case (i_lsu_addr[1])
-              1'b0: dmem_byte_enable = 4'b0011;  // Halfword 0 (bits [15:0])
-              1'b1: dmem_byte_enable = 4'b1100;  // Halfword 1 (bits [31:16])
-            endcase
-            // Replicate halfword to both positions
-            dmem_write_data = {2{i_st_data[15:0]}};
-          end
+        
+        // =====================================================
+        // SH - Store Halfword (offset 0,1,2,3 - may span words)
+        // =====================================================
+        3'b001: begin
+          case (offset)
+            2'b00: begin  // Halfword at offset 0 -> Port A[15:0]
+              dmem_wren_a = 4'b0011;
+              dmem_data_a = {16'h0, i_st_data[15:0]};
+            end
+            2'b01: begin  // Halfword at offset 1 -> Port A[23:8]
+              dmem_wren_a = 4'b0110;
+              dmem_data_a = {8'h0, i_st_data[15:0], 8'h0};
+            end
+            2'b10: begin  // Halfword at offset 2 -> Port A[31:16]
+              dmem_wren_a = 4'b1100;
+              dmem_data_a = {i_st_data[15:0], 16'h0};
+            end
+            2'b11: begin  // Halfword spans words: Port A[31:24] + Port B[7:0]
+              dmem_wren_a = 4'b1000;
+              dmem_wren_b = 4'b0001;
+              dmem_data_a = {i_st_data[7:0], 24'h0};        // Low byte to A
+              dmem_data_b = {24'h0, i_st_data[15:8]};       // High byte to B
+            end
+          endcase
         end
-
-        3'b010: begin // SW - Store word (must be 4-byte aligned)
-          if (i_lsu_addr[1:0] == 2'b00) begin  // Only if addr[1:0] == 00
-            dmem_byte_enable = 4'b1111;  // Enable all bytes
-            dmem_write_data = i_st_data; // Pass through unchanged
-          end
+        
+        // =====================================================
+        // SW - Store Word (offset 0,1,2,3 - may span words)
+        // =====================================================
+        3'b010: begin
+          case (offset)
+            2'b00: begin  // Word at offset 0 -> Port A[31:0]
+              dmem_wren_a = 4'b1111;
+              dmem_data_a = i_st_data;
+            end
+            2'b01: begin  // Word spans: Port A[31:8] + Port B[7:0]
+              dmem_wren_a = 4'b1110;
+              dmem_wren_b = 4'b0001;
+              dmem_data_a = {i_st_data[23:0], 8'h0};
+              dmem_data_b = {24'h0, i_st_data[31:24]};
+            end
+            2'b10: begin  // Word spans: Port A[31:16] + Port B[15:0]
+              dmem_wren_a = 4'b1100;
+              dmem_wren_b = 4'b0011;
+              dmem_data_a = {i_st_data[15:0], 16'h0};
+              dmem_data_b = {16'h0, i_st_data[31:16]};
+            end
+            2'b11: begin  // Word spans: Port A[31:24] + Port B[23:0]
+              dmem_wren_a = 4'b1000;
+              dmem_wren_b = 4'b0111;
+              dmem_data_a = {i_st_data[7:0], 24'h0};
+              dmem_data_b = {8'h0, i_st_data[31:8]};
+            end
+          endcase
         end
-
-        default: dmem_byte_enable = 4'b0000;  // Invalid funct3
+        
+        default: begin
+          dmem_wren_a = 4'b0000;
+          dmem_wren_b = 4'b0000;
+        end
       endcase
     end
   end
   
   //============================================================================
-  // Load Data Processing - OPTIMIZED
+  // LOAD LOGIC: Funnel Shifter for Misaligned Access (PIPELINED)
   //============================================================================
-  // Extract the correct byte/halfword/word from the DMEM read data based on
-  // the address offset, and apply sign/zero extension as needed.
+  // Concatenate Port B (high word) and Port A (low word) into 64-bit vector.
+  // Shift right by (r_offset * 8) bits to align the desired data.
+  // Extract 32 bits and apply sign/zero extension based on r_funct3.
   // 
-  // OPTIMIZATION: Select narrow byte/half FIRST with 2-bit mux, THEN extend.
-  //   This keeps fan-in small on the 32-bit sign-extension logic.
-  //   Original version had 4-way 32-bit mux after extension (4x wider).
-  //
-  // For misaligned loads, return zero.
+  // CRITICAL: Use REGISTERED control signals (r_offset, r_funct3) because
+  // dmem_q_a/q_b are delayed by 1 cycle (synchronous RAM output).
   
-  logic [7:0]  selected_byte;   // Narrow byte selection
-  logic [15:0] selected_half;   // Narrow halfword selection
-  logic [31:0] extended_byte;   // Sign/zero-extended byte
-  logic [31:0] extended_half;   // Sign/zero-extended halfword
-  logic        is_unsigned;     // Load unsigned flag
-
-  // Step 1: Select byte/halfword using narrow 2-bit address mux
-  always @(*) begin
-    case (i_lsu_addr[1:0])
-      2'b00: selected_byte = dmem_read_data[7:0];
-      2'b01: selected_byte = dmem_read_data[15:8];
-      2'b10: selected_byte = dmem_read_data[23:16];
-      2'b11: selected_byte = dmem_read_data[31:24];
+  logic [63:0] funnel_concat;
+  logic [31:0] funnel_shifted;
+  logic [31:0] load_extended;
+  
+  // Step 1: Concatenate dual-port reads into 64-bit
+  assign funnel_concat = {dmem_q_b, dmem_q_a};  // [63:32] = B, [31:0] = A
+  
+  // Step 2: Shift based on byte offset to align data
+  always_comb begin
+    case (r_offset)  // USE REGISTERED OFFSET (captured when load was issued)
+      2'b00: funnel_shifted = funnel_concat[31:0];   // No shift
+      2'b01: funnel_shifted = funnel_concat[39:8];   // Shift right 8 bits
+      2'b10: funnel_shifted = funnel_concat[47:16];  // Shift right 16 bits
+      2'b11: funnel_shifted = funnel_concat[55:24];  // Shift right 24 bits
     endcase
   end
-
-  always @(*) begin
-    case (i_lsu_addr[1])
-      1'b0: selected_half = dmem_read_data[15:0];
-      1'b1: selected_half = dmem_read_data[31:16];
+  
+  // Step 3: Extract and extend based on load type
+  always_comb begin
+    case (r_funct3)  // USE REGISTERED FUNCT3 (captured when load was issued)
+      3'b000: load_extended = {{24{funnel_shifted[7]}}, funnel_shifted[7:0]};    // LB (sign-extend)
+      3'b001: load_extended = {{16{funnel_shifted[15]}}, funnel_shifted[15:0]};  // LH (sign-extend)
+      3'b010: load_extended = funnel_shifted;                                     // LW (no extend)
+      3'b100: load_extended = {24'h0, funnel_shifted[7:0]};                       // LBU (zero-extend)
+      3'b101: load_extended = {16'h0, funnel_shifted[15:0]};                      // LHU (zero-extend)
+      default: load_extended = 32'h0;
     endcase
   end
-
-  // Step 2: Extend narrow values (small fan-in)
-  assign is_unsigned = (i_funct3 == 3'b100) | (i_funct3 == 3'b101);  // LBU or LHU
-  assign extended_byte = is_unsigned ? {24'b0, selected_byte} : {{24{selected_byte[7]}}, selected_byte};
-  assign extended_half = is_unsigned ? {16'b0, selected_half} : {{16{selected_half[15]}}, selected_half};
-
-  // Step 3: Final mux based on load type (after extension)
-  always @(*) begin
-    if (misaligned_access) begin
-      processed_read_data = 32'b0;  // Return 0 for misaligned
-    end else begin
-      case (i_funct3[1:0])  // Use only lower 2 bits (00=byte, 01=half, 10=word)
-        2'b00:   processed_read_data = extended_byte;  // LB/LBU
-        2'b01:   processed_read_data = extended_half;  // LH/LHU
-        2'b10:   processed_read_data = dmem_read_data; // LW
-        default: processed_read_data = 32'b0;
-      endcase
+  
+  assign dmem_load_data = load_extended;
+  
+`ifndef SYNTHESIS
+  // Debug: Print first few loads to verify timing
+  always @(posedge i_clk) begin
+    if (is_load && $time < 1000) begin
+      $display("[LSU LOAD] Time=%0t | Addr=0x%h offset=%b funct3=%b | NEXT CYCLE r_offset=%b r_funct3=%b", 
+               $time, i_lsu_addr, i_lsu_addr[1:0], i_funct3, i_lsu_addr[1:0], i_funct3);
+    end
+    if ($time < 1000) begin
+      $display("[LSU DATA] Time=%0t | q_a=0x%h q_b=0x%h | r_offset=%b r_funct3=%b | shift=0x%h extend=0x%h", 
+               $time, dmem_q_a, dmem_q_b, r_offset, r_funct3, funnel_shifted, load_extended);
     end
   end
+`endif
   
   //============================================================================
   // Sub-module Instantiations
   //============================================================================
 
-// Input Buffer: Synchronize external switch inputs to prevent metastability
-input_buffer u0(
-  .i_clk(i_clk),
-  .i_reset(i_reset),
-  .i_io_sw(i_io_sw),    // Raw switch inputs from FPGA
-  .b_io_sw(b_io_sw)     // Synchronized switch data
-);  
+  // Input Buffer: Synchronize external switch inputs
+  input_buffer u_input_buffer(
+    .i_clk(i_clk),
+    .i_reset(i_reset),
+    .i_io_sw(i_io_sw),
+    .b_io_sw(b_io_sw)
+  );
 
-// Output Buffer: Handle memory-mapped I/O writes to LEDs, 7-segment, and LCD
-output_buffer u1(
-  .i_clk(i_clk),
-  .i_reset(i_reset),
-  .i_st_data(i_st_data),     // Store data from CPU
-  .i_io_addr(i_lsu_addr),    // I/O address for decoding
-  .i_funct3(i_funct3),       // Store type (SB/SH/SW)
-  .i_mem_write(i_lsu_wren),  // Memory write signal from pipeline
-  .i_io_valid(f_io_valid),   // Address is in I/O range
-  .i_ctrl_kill(i_ctrl_kill),     // Kill signal - prevents flushed stores
-  .i_ctrl_valid(i_ctrl_valid),   // Valid signal - prevents bubble stores
-  .i_ctrl_bubble(i_ctrl_bubble), // Bubble signal - prevents bubble stores
-  .b_io_ledr(b_io_ledr),     // Buffered red LED data
-  .b_io_ledg(b_io_ledg),     // Buffered green LED data
-  .b_io_hexl(b_io_hexl),     // 7-segment low data
-  .b_io_hexh(b_io_hexh),     // 7-segment high data
-  .b_io_lcd(b_io_lcd)        // Buffered LCD data
-);
+  // Output Buffer: Handle memory-mapped I/O writes
+  output_buffer u_output_buffer(
+    .i_clk(i_clk),
+    .i_reset(i_reset),
+    .i_st_data(i_st_data),
+    .i_io_addr(i_lsu_addr),
+    .i_funct3(i_funct3),
+    .i_mem_write(i_lsu_wren),
+    .i_io_valid(f_io_valid),
+    .i_ctrl_kill(i_ctrl_kill),
+    .i_ctrl_valid(i_ctrl_valid),
+    .i_ctrl_bubble(i_ctrl_bubble),
+    .b_io_ledr(b_io_ledr),
+    .b_io_ledg(b_io_ledg),
+    .b_io_hexl(b_io_hexl),
+    .b_io_hexh(b_io_hexh),
+    .b_io_lcd(b_io_lcd)
+  );
 
-// Data Memory: 2 KiB SRAM with per-byte write enables
-dmem dmem_inst(
-  .i_reset(i_reset),
-  .address(i_lsu_addr[15:0]),      // Byte address (16 bits for 64 KiB)
-	.i_clk(i_clk),
-	.data(dmem_write_data),          // Write data (replicated bytes/halfwords)
-	.wren(dmem_byte_enable),         // Per-byte write enables [3:0]
-	.q(dmem_read_data)               // Read data output
-);
+  // Data Memory: Dual-Port Synchronous RAM
+  dmem u_dmem(
+    .i_clk(i_clk),
+    .i_reset(i_reset),
+    // Port A
+    .address_a(dmem_addr_a),
+    .data_a(dmem_data_a),
+    .wren_a(dmem_wren_a),
+    .q_a(dmem_q_a),
+    // Port B
+    .address_b(dmem_addr_b),
+    .data_b(dmem_data_b),
+    .wren_b(dmem_wren_b),
+    .q_b(dmem_q_b)
+  );
 
-// Input Mux: Address decoder to determine if access is to DMEM or I/O
-input_mux u2(
-  .i_lsu_addr(i_lsu_addr),         // Full 32-bit address
-  .i_lsu_wren(i_lsu_wren),         // Write enable from control unit
-  .f_dmem_valid(f_dmem_valid),     // Flag: address in DMEM range
-  .f_io_valid(f_io_valid),         // Flag: address in I/O range
-  .f_dmem_wren(f_dmem_wren)        // Write enable for DMEM
-);
+  // Input Mux: Address decoder
+  input_mux u_input_mux(
+    .i_lsu_addr(i_lsu_addr),
+    .i_lsu_wren(i_lsu_wren),
+    .f_dmem_valid(f_dmem_valid),
+    .f_io_valid(f_io_valid),
+    .f_dmem_wren(f_dmem_wren)
+  );
 
-// Output Mux: Select load data from DMEM or I/O regions, unpack 7-segment displays
-output_mux u3(
-  .i_clk(i_clk),
-  // Data sources
-  .b_dmem_data(processed_read_data),  // Processed DMEM load data (sign/zero extended)
-  .b_io_ledr(b_io_ledr),              // Red LED buffer
-  .b_io_ledg(b_io_ledg),              // Green LED buffer
-  .b_io_hexl(b_io_hexl),              // 7-segment low buffer
-  .b_io_hexh(b_io_hexh),              // 7-segment high buffer
-  .b_io_lcd(b_io_lcd),                // LCD buffer
-  .b_io_sw(b_io_sw),                  // Synchronized switch inputs
-  .b_io_btn(b_io_btn),                // Button buffer (unused)
-  
-  // Address decode flags
-  .f_dmem_valid(f_dmem_valid),        // Select DMEM data if in DMEM range
-  .f_io_valid(f_io_valid),            // Select I/O data if in I/O range
-  .i_ld_addr(i_lsu_addr),             // Load address for I/O region decode
-  
-  // Outputs
-  .o_ld_data(o_ld_data),              // Load data to CPU
-  .o_io_ledr(o_io_ledr),              // Red LEDs to FPGA
-  .o_io_ledg(o_io_ledg),              // Green LEDs to FPGA
-  .o_io_hex0(o_io_hex0),              // 7-segment digit 0
-  .o_io_hex1(o_io_hex1),              // 7-segment digit 1
-  .o_io_hex2(o_io_hex2),              // 7-segment digit 2
-  .o_io_hex3(o_io_hex3),              // 7-segment digit 3
-  .o_io_hex4(o_io_hex4),              // 7-segment digit 4
-  .o_io_hex5(o_io_hex5),              // 7-segment digit 5
-  .o_io_hex6(o_io_hex6),              // 7-segment digit 6
-  .o_io_hex7(o_io_hex7),              // 7-segment digit 7
-  .o_io_lcd(o_io_lcd)                 // LCD to FPGA
-);
+  // Output Mux: Select load data from DMEM or I/O
+  output_mux u_output_mux(
+    .i_clk(i_clk),
+    .b_dmem_data(dmem_load_data),
+    .b_io_ledr(b_io_ledr),
+    .b_io_ledg(b_io_ledg),
+    .b_io_hexl(b_io_hexl),
+    .b_io_hexh(b_io_hexh),
+    .b_io_lcd(b_io_lcd),
+    .b_io_sw(b_io_sw),
+    .b_io_btn(b_io_btn),
+    .f_dmem_valid(f_dmem_valid),
+    .f_io_valid(f_io_valid),
+    .i_ld_addr(i_lsu_addr),
+    .o_ld_data(o_ld_data),
+    .o_io_ledr(o_io_ledr),
+    .o_io_ledg(o_io_ledg),
+    .o_io_hex0(o_io_hex0),
+    .o_io_hex1(o_io_hex1),
+    .o_io_hex2(o_io_hex2),
+    .o_io_hex3(o_io_hex3),
+    .o_io_hex4(o_io_hex4),
+    .o_io_hex5(o_io_hex5),
+    .o_io_hex6(o_io_hex6),
+    .o_io_hex7(o_io_hex7),
+    .o_io_lcd(o_io_lcd)
+  );
+
+`ifndef SYNTHESIS
+`endif
 
 endmodule

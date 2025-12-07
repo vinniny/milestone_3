@@ -125,12 +125,5 @@ module ex_mem_reg (
             end
         end
     end
-    
-    // Diagnostic: Show what's actually IN the EX/MEM register after clock edge
-`ifndef SYNTHESIS
-    always @(posedge i_clk) begin
-
-    end
-`endif
 
 endmodule

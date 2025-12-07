@@ -94,7 +94,7 @@ module stage_if (
     // PC Update
     always @(posedge i_clk) begin
         if (!i_reset) begin
-            r_pc <= 32'b0;
+            r_pc <= 32'hFFFFFFFC;  // Start at -4 so pc_next = 0 for first fetch
         end else if (i_stall) begin
             // Hold PC
         end else begin
@@ -102,10 +102,24 @@ module stage_if (
         end
     end
 
-    // Outputs
-    assign o_imem_addr = r_pc;
-    assign o_pc = r_pc;
-    assign o_instr = i_flush ? 32'b0 : i_imem_rdata; 
+    // ===========================================================================
+    // Outputs - PRE-FETCH for Synchronous Memory
+    // ===========================================================================
+    // i_mem has 1-cycle latency (synchronous read via always_ff).
+    // Send pc_next (combinational next-PC) to memory address so the instruction
+    // arrives at i_mem output when PC advances to that value.
+    // 
+    // Timing Example:
+    //   Cycle N:   r_pc = -4,  pc_next = 0,   o_imem_addr = 0   (pre-fetch addr 0)
+    //   Cycle N+1: r_pc = 0,   pc_next = 4,   i_mem outputs instr@0
+    //   Cycle N+2: r_pc = 4,   pc_next = 8,   instr@0 clocked into if_id_reg
+    //
+    // Pre-fetch compensates for sync memory latency. if_id_reg flip-flops
+    // provide the necessary cycle to break combinational loops with ID stage.
+    // Flush is handled by if_id_reg, not here - just pass through instruction.
+    assign o_imem_addr = pc_next;  // PRE-FETCH: Use next PC for sync memory
+    assign o_pc = r_pc;            // Output current PC
+    assign o_instr = i_imem_rdata; // Pass through - flush handled by if_id_reg
     
     assign o_pred_taken = pred_taken;
 

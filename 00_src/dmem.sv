@@ -1,16 +1,24 @@
 // ============================================================================
 // Module: dmem
-// Description: Data Memory (DMEM) - 64 KiB word-addressed memory
-//              Asynchronous read, synchronous write with byte enables
-//              Implements single-port BRAM-compatible behavior
+// Description: Data Memory (DMEM) - 64 KiB True Dual-Port Synchronous RAM
+//              **SYNCHRONOUS READ/WRITE** on both ports for M10K Block RAM
+//              Pure synchronous design for simulation and synthesis
 // ============================================================================
 module dmem(
   input  logic        i_clk,        // Clock
   input  logic        i_reset,      // Active-low reset (unused, memory persists)
-  input  logic [15:0] address,      // Byte address [15:0] (64 KiB range)
-  input  logic [31:0] data,         // Write data (32-bit word)
-  input  logic [3:0]  wren,         // Byte write enables [3:0]
-  output logic [31:0] q             // Read data (32-bit word)
+  
+  // Port A - Synchronous Read/Write
+  input  logic [15:0] address_a,    // Byte address [15:0] (64 KiB range)
+  input  logic [31:0] data_a,       // Write data (32-bit word)
+  input  logic [3:0]  wren_a,       // Byte write enables [3:0]
+  output logic [31:0] q_a,          // Read data (32-bit word, REGISTERED)
+  
+  // Port B - Synchronous Read/Write
+  input  logic [15:0] address_b,    // Byte address [15:0] (64 KiB range)
+  input  logic [31:0] data_b,       // Write data (32-bit word)
+  input  logic [3:0]  wren_b,       // Byte write enables [3:0]
+  output logic [31:0] q_b           // Read data (32-bit word, REGISTERED)
 );
 
   localparam DEPTH = 16384;           // 16384 words × 4 bytes = 64 KiB
@@ -20,33 +28,50 @@ module dmem(
   (* ram_style = "block" *)           // Vivado: Force block RAM  
   logic [31:0] mem [0:DEPTH-1];
 
-  // Initialize memory from hex file or zero at simulation start
-  // Contents persist across resets (no reset logic in always)
-  // Initialize all memory to zero to prevent X-propagation
+`ifndef SYNTHESIS
+  // Initialize memory to 0 for simulation (synthesis tools ignore initial blocks)
+  // This prevents X (unknown) values during simulation which cause undefined behavior
   initial begin
     integer i;
     for (i = 0; i < DEPTH; i = i + 1) begin
-      mem[i] = 32'h0;  // Initialize all data memory to zero
+      mem[i] = 32'h0;
     end
-    // Try to load from hex file, if not found already initialized to zero
-    // $readmemh("../02_test/isa_4b.hex", mem);
+  end
+`endif
+
+  // Convert byte addresses to word addresses
+  logic [13:0] word_addr_a, word_addr_b;
+  assign word_addr_a = address_a[15:2];   // Drop lower 2 bits for word alignment
+  assign word_addr_b = address_b[15:2];   // Drop lower 2 bits for word alignment
+
+  // ===========================================================================
+  // Port A: Synchronous Read + Synchronous Write with byte enables
+  // ===========================================================================
+  always_ff @(posedge i_clk) begin
+    // Write (per-byte enables)
+    if (wren_a[0]) mem[word_addr_a][7:0]   <= data_a[7:0];    // Byte 0
+    if (wren_a[1]) mem[word_addr_a][15:8]  <= data_a[15:8];   // Byte 1
+    if (wren_a[2]) mem[word_addr_a][23:16] <= data_a[23:16];  // Byte 2
+    if (wren_a[3]) mem[word_addr_a][31:24] <= data_a[31:24];  // Byte 3
+    
+    // Read (always registered, independent of write)
+    q_a <= mem[word_addr_a];
   end
 
-  // Convert byte address to word address
-  logic [13:0] word_addr;
-  assign word_addr = address[15:2];   // Drop lower 2 bits for word alignment
-
-  // Asynchronous read
-  assign q = mem[word_addr];
-
-  // Synchronous write with per-byte enables
-  // Implements byte-enable writes without read-modify-write
-  // Infers BRAM with byte enables on FPGA
-  always @(posedge i_clk) begin
-    if (wren[0]) mem[word_addr][7:0]   <= data[7:0];    // Byte 0
-    if (wren[1]) mem[word_addr][15:8]  <= data[15:8];   // Byte 1
-    if (wren[2]) mem[word_addr][23:16] <= data[23:16];  // Byte 2
-    if (wren[3]) mem[word_addr][31:24] <= data[31:24];  // Byte 3
+  // ===========================================================================
+  // Port B: Synchronous Read + Synchronous Write with byte enables
+  // ===========================================================================
+  always_ff @(posedge i_clk) begin
+    // Write (per-byte enables)
+    if (wren_b[0]) mem[word_addr_b][7:0]   <= data_b[7:0];    // Byte 0
+    if (wren_b[1]) mem[word_addr_b][15:8]  <= data_b[15:8];   // Byte 1
+    if (wren_b[2]) mem[word_addr_b][23:16] <= data_b[23:16];  // Byte 2
+    if (wren_b[3]) mem[word_addr_b][31:24] <= data_b[31:24];  // Byte 3
+    
+    // Read (always registered, independent of write)
+    q_b <= mem[word_addr_b];
   end
+
+
 
 endmodule

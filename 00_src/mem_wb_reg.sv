@@ -35,11 +35,14 @@ module mem_wb_reg (
     output logic [2:0]  o_ctrl_funct3
 );
 
+    // Pass-through rdata (dmem output is already synchronous, no need for double-latency)
+    assign o_rdata = i_rdata;
+
     always @(posedge i_clk) begin
         if (!i_reset) begin
             o_pc <= 32'b0;
             o_alu_result <= 32'b0;
-            o_rdata <= 32'b0;
+            // o_rdata is pass-through (assigned combinationally)
             o_rd <= 5'b0;
             
             o_ctrl_valid <= 1'b0;
@@ -60,14 +63,14 @@ module mem_wb_reg (
             
             o_pc             <= 32'b0;
             o_alu_result     <= 32'b0;
-            o_rdata          <= 32'b0;
+            // o_rdata is pass-through (assigned combinationally)
             o_rd             <= 5'b0;
         end else if (i_stall) begin
             // Hold
         end else begin
             o_pc             <= i_pc;
             o_alu_result     <= i_alu_result;
-            o_rdata          <= i_rdata;
+            // o_rdata is pass-through (assigned combinationally)
             o_rd             <= i_rd;
             
             o_ctrl_valid     <= i_ctrl_valid;
