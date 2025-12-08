@@ -64,8 +64,8 @@ module lsu(
   logic        f_io_valid;     // Address in I/O range
   logic        f_dmem_wren;    // Write enable for DMEM
   
-  // DMEM dual-port interface
-  logic [15:0] dmem_addr_a, dmem_addr_b;
+  // DMEM dual-port interface (14-bit word indices)
+  logic [13:0] dmem_addr_a, dmem_addr_b;
   logic [31:0] dmem_data_a, dmem_data_b;
   logic [3:0]  dmem_wren_a, dmem_wren_b;
   logic [31:0] dmem_q_a, dmem_q_b;
@@ -106,14 +106,15 @@ module lsu(
   end
   
   //============================================================================
-  // DUAL-PORT ADDRESS GENERATION
+  // DUAL-PORT ADDRESS GENERATION - FIXED
   //============================================================================
-  // Port A: Word-aligned base address (i_addr[31:2] << 2)
-  // Port B: Next consecutive word (i_addr[31:2] + 1) << 2
-  // This allows reading/writing two consecutive words for misaligned access
+  // Send WORD INDICES (14-bit) to dmem, NOT byte addresses.
+  // Port A: Base word index (addr / 4)
+  // Port B: Next word index (addr / 4) + 1
+  // This allows reading/writing two consecutive words for misaligned access.
   
-  assign dmem_addr_a = {i_lsu_addr[15:2], 2'b00};           // Base word
-  assign dmem_addr_b = {i_lsu_addr[15:2] + 14'd1, 2'b00};  // Next word
+  assign dmem_addr_a = i_lsu_addr[15:2];           // Word index (14-bit)
+  assign dmem_addr_b = i_lsu_addr[15:2] + 14'd1;   // Next word index
   
   //============================================================================
   // STORE LOGIC: Byte Enable Generation for Dual Ports

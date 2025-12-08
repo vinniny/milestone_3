@@ -9,13 +9,13 @@ module dmem(
   input  logic        i_reset,      // Active-low reset (unused, memory persists)
   
   // Port A - Synchronous Read/Write
-  input  logic [15:0] address_a,    // Byte address [15:0] (64 KiB range)
+  input  logic [13:0] address_a,    // Word index [13:0] (16K words = 64 KiB)
   input  logic [31:0] data_a,       // Write data (32-bit word)
   input  logic [3:0]  wren_a,       // Byte write enables [3:0]
   output logic [31:0] q_a,          // Read data (32-bit word, REGISTERED)
   
   // Port B - Synchronous Read/Write
-  input  logic [15:0] address_b,    // Byte address [15:0] (64 KiB range)
+  input  logic [13:0] address_b,    // Word index [13:0] (16K words = 64 KiB)
   input  logic [31:0] data_b,       // Write data (32-bit word)
   input  logic [3:0]  wren_b,       // Byte write enables [3:0]
   output logic [31:0] q_b           // Read data (32-bit word, REGISTERED)
@@ -39,10 +39,10 @@ module dmem(
   end
 `endif
 
-  // Convert byte addresses to word addresses
+  // Addresses are already word indices, use directly
   logic [13:0] word_addr_a, word_addr_b;
-  assign word_addr_a = address_a[15:2];   // Drop lower 2 bits for word alignment
-  assign word_addr_b = address_b[15:2];   // Drop lower 2 bits for word alignment
+  assign word_addr_a = address_a;   // Already a word index
+  assign word_addr_b = address_b;   // Already a word index
 
   // ===========================================================================
   // Port A: Synchronous Read + Synchronous Write with byte enables
